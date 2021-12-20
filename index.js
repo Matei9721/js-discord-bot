@@ -5,9 +5,10 @@ const { joinVoiceChannel,
     entersState,
     StreamType,
     AudioPlayerStatus,
+    NoSubscriberBehavior,
     VoiceConnectionStatus, } = require('@discordjs/voice');
 const { REST } = require('@discordjs/rest');
-const ytdl = require('ytdl-core')
+const play = require('play-dl')
 const { Routes } = require('discord-api-types/v9');
 const command_list = require('./commands')
 const youtube=require('youtube-search-api');
@@ -107,8 +108,13 @@ client.on('messageCreate', (message) => {
 
     }
 })
-// https://www.mboxdrive.com/Saint%20Punk%20-%20Empty%20Bed%20[Monstercat%20Lyric%20Video].mp3
-const player = createAudioPlayer();
+
+let player = createAudioPlayer({
+    behaviors: {
+        noSubscriber: NoSubscriberBehavior.Play
+    }
+})
+
 async function playSong(rest) {
     console.log(rest)
     let url;
@@ -121,31 +127,22 @@ async function playSong(rest) {
             console.log("Page1");
             console.log(res.items[0]["id"]);
             url = "https://www.youtube.com/watch?v=".concat(res.items[0]["id"])
-            youtube.NextPage(res.nextPage, true, 2).then(result => {
-                console.log("Page2");
-                console.log(result);
-                youtube.NextPage(result.nextPage, true, 2).then(result1 => {
-                    console.log("Page3");
-                    console.log(result1);
-                }).catch(err => {
-                    console.log(err);
-                })
-            }).catch(err => {
-                console.log(err);
-            });
+
         }).catch(err => {
             console.log(err);
         });
         console.log(url)
     }
+
     console.log(url)
-    const resource = createAudioResource(ytdl(url), {
-        inputType: StreamType.Arbitrary,
+    let stream = await play.stream(url)
+    let resource = createAudioResource(stream.stream, {
+        inputType : stream.type
     })
 
     player.play(resource);
 
-    return entersState(player, AudioPlayerStatus.Playing, 5e3);
+
 }
 
 
@@ -180,5 +177,9 @@ async function execute(message, serverQueue) {
     connection.subscribe(player);
 
 }
+
+player.on('error', error => {
+    console.error(error);
+});
 
 client.login(token);
