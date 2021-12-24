@@ -44,9 +44,10 @@ const rest = new REST({ version: '9' }).setToken(token);
     }
 })();
 
-const queue = new Map();
+const queue = [];
 
 let connection;
+let channel;
 
 
 
@@ -72,11 +73,9 @@ client.on('interactionCreate', async interaction => {
 
 client.on('messageCreate', (message) => {
     const guildID = '400698493301424129'
-    const serverQueue = queue.get((client.guilds.cache.get(guildID)));
 
     if(message.content.startsWith("!join")){
-        execute(message, serverQueue);
-        return;
+        execute(message);
     } else if(message.content === "bot get him") {
         message.channel.send("you fell off + ratio + who asked + no u + deez nuts + radio + don't care + didn't ask + caught in 4k + cope + seethe + GG + your mom's + the hood watches markiplier now + grow up + L + L (part 2) + retweet + ligma + taco bell tortilla crunch + think outside the bun + ur benched + ur a wrench + i own you + ur dad fell off + my dad could beat ur dad up + silver elite + tryhard + boomer + ur beta + L (part 3) + ur sus + quote tweet + you're cringe + i did your mom + you bought monkey nft + you're weirdchamp + you're a clown + my dad owns steam")
     } else if(message.content ==="!leave") {
@@ -106,6 +105,17 @@ client.on('messageCreate', (message) => {
         });
 
 
+    } else if(message.content.startsWith("!skip")) {
+        if(queue.length === 0) {
+            player.pause()
+        } else {
+            player.play(getNextResource())
+        }
+
+    } else if(message.content.startsWith("!pause")) {
+        player.pause()
+    } else if (message.content.startsWith("!resume")) {
+        player.unpause()
     }
 })
 
@@ -115,23 +125,43 @@ let player = createAudioPlayer({
     }
 })
 
-async function playSong(rest) {
-    console.log(rest)
+async function addResource(rest) {
     let url;
     if (rest.includes("https")) {
         url = rest;
-        console.log("link")
     } else {
         console.log("no link")
-        await youtube.GetListByKeyword(rest, true, 2).then(res => {
-            console.log("Page1");
-            console.log(res.items[0]["id"]);
+        await youtube.GetListByKeyword(rest, true, 1).then(res => {
             url = "https://www.youtube.com/watch?v=".concat(res.items[0]["id"])
-
         }).catch(err => {
             console.log(err);
         });
-        console.log(url)
+    }
+
+    console.log(url)
+    let stream = await play.stream(url)
+    let resource = createAudioResource(stream.stream, {
+        inputType : stream.type
+    })
+
+    queue.push(resource)
+}
+
+function getNextResource() {
+    return queue.shift()
+}
+
+async function playSong(rest) {
+    let url;
+    if (rest.includes("https")) {
+        url = rest;
+    } else {
+        console.log("no link")
+        await youtube.GetListByKeyword(rest, true, 1).then(res => {
+            url = "https://www.youtube.com/watch?v=".concat(res.items[0]["id"])
+        }).catch(err => {
+            console.log(err);
+        });
     }
 
     console.log(url)
@@ -146,40 +176,79 @@ async function playSong(rest) {
 }
 
 
-async function execute(message, serverQueue) {
+async function execute(message) {
     let [first, ...rest] = message.content.split(' ')
     rest = rest.join(' ')
 
+    channel = message.channel
     const voiceChannel = message.member.voice.channel;
-
 
     if (!voiceChannel)
         return message.channel.send(
             "I am an idiot bot and I don't know what to do if you are not in a voice room"
         );
+
     const permissions = voiceChannel.permissionsFor(message.client.user);
     if (!permissions.has("CONNECT") || !permissions.has("SPEAK")) {
         return message.channel.send(
             "I need the permissions to join and speak in your voice channel!"
         );
     }
-    await playSong(rest);
-    console.log('Song is ready to play!');
-    console.log(message.member.voice.channel.id)
-    connection = joinVoiceChannel({
-        channelId: message.member.voice.channel.id,
-        guildId: message.guild.id,
-        adapterCreator: message.guild.voiceAdapterCreator
-    })
 
-    await entersState(connection, VoiceConnectionStatus.Ready, 30e3);
 
-    connection.subscribe(player);
+
+
+    // await playSong(rest);
+    //
+    // console.log('Song is ready to play!');
+    // console.log(message.member.voice.channel.id)
+
+    if(!connection) {
+
+        await addResource(rest)
+        player.play(getNextResource())
+
+        connection = joinVoiceChannel({
+            channelId: voiceChannel.id,
+            guildId: message.guild.id,
+            adapterCreator: message.guild.voiceAdapterCreator
+        })
+
+        await entersState(connection, VoiceConnectionStatus.Ready, 30e3);
+
+        connection.subscribe(player);
+
+
+    } else {
+        await addResource(rest)
+        console.log(player.state.status)
+        if (player.state.status === "idle") {
+            console.log("im idle")
+            player.play(getNextResource())
+        }
+    }
+
+
+
+
+
 
 }
+
+player.on(AudioPlayerStatus.Idle, interaction => {
+    console.log("Finished playing")
+    channel.send("Finished playing")
+
+    if(queue.length > 0) {
+        channel.send("Playing next song")
+        player.play(getNextResource())
+    }
+});
 
 player.on('error', error => {
     console.error(error);
 });
+
+
 
 client.login(token);
