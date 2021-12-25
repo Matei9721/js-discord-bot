@@ -51,7 +51,7 @@ let channel;
 
 
 
-const { Client, Intents } = require('discord.js');
+const { Client, Intents, MessageEmbed  } = require('discord.js');
 
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_VOICE_STATES] });
 
@@ -74,7 +74,7 @@ client.on('interactionCreate', async interaction => {
 client.on('messageCreate', (message) => {
     const guildID = '400698493301424129'
 
-    if(message.content.startsWith("!join")){
+    if(message.content.startsWith("!play")){
         execute(message);
     } else if(message.content === "bot get him") {
         message.channel.send("you fell off + ratio + who asked + no u + deez nuts + radio + don't care + didn't ask + caught in 4k + cope + seethe + GG + your mom's + the hood watches markiplier now + grow up + L + L (part 2) + retweet + ligma + taco bell tortilla crunch + think outside the bun + ur benched + ur a wrench + i own you + ur dad fell off + my dad could beat ur dad up + silver elite + tryhard + boomer + ur beta + L (part 3) + ur sus + quote tweet + you're cringe + i did your mom + you bought monkey nft + you're weirdchamp + you're a clown + my dad owns steam")
@@ -109,14 +109,39 @@ client.on('messageCreate', (message) => {
         if(queue.length === 0) {
             player.pause()
         } else {
-            player.play(getNextResource())
+            playSong()
+            //player.play(getNextResource())
         }
 
     } else if(message.content.startsWith("!pause")) {
         player.pause()
     } else if (message.content.startsWith("!resume")) {
         player.unpause()
+    } else if(message.content.startsWith("!queue")) {
+
+        let fields = []
+
+        queue.forEach(element => {
+            let field = { name: element.metadata.title, value: element.metadata.url }
+            fields.push(field)
+        })
+        console.log(fields)
+
+        const Embed = new MessageEmbed()
+            .setColor('#0099ff')
+            .setAuthor('Songs in queue:', 'https://images.emojiterra.com/twitter/v13.1/512px/1f972.png',
+              )
+            .setDescription('There are ' + queue.length + ' more songs in the queue')
+            .addFields(
+                fields
+            )
+
+            .setTimestamp()
+
+        channel.send({ embeds: [Embed] });
+
     }
+
 })
 
 let player = createAudioPlayer({
@@ -127,21 +152,33 @@ let player = createAudioPlayer({
 
 async function addResource(rest) {
     let url;
+    let yt_info
     if (rest.includes("https")) {
         url = rest;
     } else {
         console.log("no link")
-        await youtube.GetListByKeyword(rest, true, 1).then(res => {
-            url = "https://www.youtube.com/watch?v=".concat(res.items[0]["id"])
-        }).catch(err => {
-            console.log(err);
-        });
+        // await youtube.GetListByKeyword(rest, true, 1).then(res => {
+        //     url = "https://www.youtube.com/watch?v=".concat(res.items[0]["id"])
+        // }).catch(err => {
+        //     console.log(err);
+        // });
+
+        yt_info = await play.search(rest, { limit : 1 })
+        console.log("Vide info:")
+        console.log(yt_info[0])
+        url = yt_info[0].url
     }
 
     console.log(url)
     let stream = await play.stream(url)
     let resource = createAudioResource(stream.stream, {
-        inputType : stream.type
+        inputType : stream.type,
+        metadata : {
+            url : url,
+            title : yt_info[0].title,
+            duration : yt_info[0].durationRaw,
+            thumbnail : yt_info[0].thumbnails[0].url
+        }
     })
 
     queue.push(resource)
@@ -151,30 +188,50 @@ function getNextResource() {
     return queue.shift()
 }
 
-async function playSong(rest) {
-    let url;
-    if (rest.includes("https")) {
-        url = rest;
-    } else {
-        console.log("no link")
-        await youtube.GetListByKeyword(rest, true, 1).then(res => {
-            url = "https://www.youtube.com/watch?v=".concat(res.items[0]["id"])
-        }).catch(err => {
-            console.log(err);
-        });
-    }
+function playSong() {
+    const resource = getNextResource()
 
-    console.log(url)
-    let stream = await play.stream(url)
-    let resource = createAudioResource(stream.stream, {
-        inputType : stream.type
-    })
+    const Embed = new MessageEmbed()
+        .setColor('#0099ff')
+        .setTitle(resource.metadata.title)
+        .setURL(resource.metadata.url)
+        .setAuthor('Now playing', 'https://images.emojiterra.com/twitter/v13.1/512px/1f972.png',
+            resource.metadata.url)
+        .setDescription('There are ' + queue.length + ' more songs in the queue')
+        .setThumbnail(resource.metadata.thumbnail)
+        .addFields(
+            { name: 'Song duration', value: resource.metadata.duration },
+        )
 
-    player.play(resource);
+        .setTimestamp()
 
+    channel.send({ embeds: [Embed] });
 
+    player.play(resource)
 }
 
+async function addToQueue(rest) {
+    await addResource(rest)
+
+    const resource = queue[queue.length-1]
+
+    const Embed = new MessageEmbed()
+        .setColor('#0099ff')
+        .setTitle(resource.metadata.title)
+        .setURL(resource.metadata.url)
+        .setAuthor('Queued song', 'https://images.emojiterra.com/twitter/v13.1/512px/1f972.png',
+            resource.metadata.url)
+        .setDescription('There are ' + queue.length + ' more songs in the queue')
+        .setThumbnail(resource.metadata.thumbnail)
+        .addFields(
+            { name: 'Song duration', value: resource.metadata.duration },
+        )
+
+        .setTimestamp()
+
+    channel.send({ embeds: [Embed] });
+
+}
 
 async function execute(message) {
     let [first, ...rest] = message.content.split(' ')
@@ -195,18 +252,11 @@ async function execute(message) {
         );
     }
 
-
-
-
-    // await playSong(rest);
-    //
-    // console.log('Song is ready to play!');
-    // console.log(message.member.voice.channel.id)
-
     if(!connection) {
 
         await addResource(rest)
-        player.play(getNextResource())
+        // player.play(getNextResource())
+        playSong()
 
         connection = joinVoiceChannel({
             channelId: voiceChannel.id,
@@ -220,11 +270,11 @@ async function execute(message) {
 
 
     } else {
-        await addResource(rest)
-        console.log(player.state.status)
+        addToQueue(rest)
         if (player.state.status === "idle") {
             console.log("im idle")
-            player.play(getNextResource())
+            // player.play(getNextResource())
+            playSong()
         }
     }
 
@@ -241,14 +291,15 @@ player.on(AudioPlayerStatus.Idle, interaction => {
 
     if(queue.length > 0) {
         channel.send("Playing next song")
-        player.play(getNextResource())
+        // player.play(getNextResource())
+        playSong()
+
     }
 });
 
 player.on('error', error => {
     console.error(error);
 });
-
 
 
 client.login(token);
