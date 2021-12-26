@@ -80,31 +80,7 @@ client.on('messageCreate', (message) => {
         message.channel.send("you fell off + ratio + who asked + no u + deez nuts + radio + don't care + didn't ask + caught in 4k + cope + seethe + GG + your mom's + the hood watches markiplier now + grow up + L + L (part 2) + retweet + ligma + taco bell tortilla crunch + think outside the bun + ur benched + ur a wrench + i own you + ur dad fell off + my dad could beat ur dad up + silver elite + tryhard + boomer + ur beta + L (part 3) + ur sus + quote tweet + you're cringe + i did your mom + you bought monkey nft + you're weirdchamp + you're a clown + my dad owns steam")
     } else if(message.content ==="!leave") {
         command_list.leave(connection)
-    } else if(message.content.startsWith("!search")) {
-
-        let [first, ...rest] = message.content.split(' ')
-        rest = rest.join(' ')
-        youtube.GetListByKeyword(rest,true,2).then(res=>{
-            console.log("Page1");
-            console.log(res.items[0]["id"]);
-
-            youtube.NextPage(res.nextPage,true,2).then(result=>{
-                console.log("Page2");
-                console.log(result);
-                youtube.NextPage(result.nextPage,true,2).then(result1=>{
-                    console.log("Page3");
-                    console.log(result1);
-                }).catch(err=>{
-                    console.log(err);
-                })
-            }).catch(err=>{
-                console.log(err);
-            });
-        }).catch(err=>{
-            console.log(err);
-        });
-
-
+        connection = null;
     } else if(message.content.startsWith("!skip")) {
         if(queue.length === 0) {
             player.pause()
@@ -125,7 +101,6 @@ client.on('messageCreate', (message) => {
             let field = { name: element.metadata.title, value: element.metadata.url }
             fields.push(field)
         })
-        console.log(fields)
 
         const Embed = new MessageEmbed()
             .setColor('#0099ff')
@@ -140,6 +115,16 @@ client.on('messageCreate', (message) => {
 
         channel.send({ embeds: [Embed] });
 
+    } else if(message.content.startsWith("!clean")) {
+        let [first, ...rest] = message.content.split(' ')
+        rest = rest.join(' ')
+
+        const amount = parseInt(rest,10)
+        if(amount >= 100) {
+            message.reply("Maximum input value is 99")
+            return;
+        }
+        message.channel.bulkDelete(amount + 1)
     }
 
 })
@@ -153,35 +138,53 @@ let player = createAudioPlayer({
 async function addResource(rest) {
     let url;
     let yt_info
-    if (rest.includes("https")) {
-        url = rest;
-    } else {
-        console.log("no link")
-        // await youtube.GetListByKeyword(rest, true, 1).then(res => {
-        //     url = "https://www.youtube.com/watch?v=".concat(res.items[0]["id"])
-        // }).catch(err => {
-        //     console.log(err);
-        // });
 
-        yt_info = await play.search(rest, { limit : 1 })
-        console.log("Vide info:")
-        console.log(yt_info[0])
-        url = yt_info[0].url
+    if(rest.includes("playlist")) {
+        let songs_info = await play.playlist_info(rest)
+
+        for(let i=0; i<songs_info.videos.length;i++) {
+
+            let stream = await play.stream(songs_info.videos[i].url)
+            let resource = createAudioResource(stream.stream, {
+                inputType : stream.type,
+                metadata : {
+                    url : songs_info.videos[i].url,
+                    title : songs_info.videos[i].title,
+                    duration : songs_info.videos[i].durationRaw,
+                    thumbnail : songs_info.videos[i].thumbnails[0].url
+                }
+            })
+
+            queue.push(resource)
+
+        }
+        console.log(songs_info.videos)
+    } else{
+
+        if (rest.includes("https")) {
+            yt_info = await play.search(rest, {limit : 1})
+            url = rest;
+        } else {
+            yt_info = await play.search(rest, { limit : 1 })
+            url = yt_info[0].url
+        }
+
+        console.log(url)
+        let stream = await play.stream(url)
+        let resource = createAudioResource(stream.stream, {
+            inputType : stream.type,
+            metadata : {
+                url : url,
+                title : yt_info[0].title,
+                duration : yt_info[0].durationRaw,
+                thumbnail : yt_info[0].thumbnails[0].url
+            }
+        })
+
+        queue.push(resource)
     }
 
-    console.log(url)
-    let stream = await play.stream(url)
-    let resource = createAudioResource(stream.stream, {
-        inputType : stream.type,
-        metadata : {
-            url : url,
-            title : yt_info[0].title,
-            duration : yt_info[0].durationRaw,
-            thumbnail : yt_info[0].thumbnails[0].url
-        }
-    })
 
-    queue.push(resource)
 }
 
 function getNextResource() {
@@ -190,6 +193,12 @@ function getNextResource() {
 
 function playSong() {
     const resource = getNextResource()
+    let description;
+    if (queue.length > 0) {
+        description = 'Next song in queue is ' + queue[0].metadata.title
+    } else if (queue.length === 0) {
+        description = 'Queue is empty'
+    }
 
     const Embed = new MessageEmbed()
         .setColor('#0099ff')
@@ -197,7 +206,7 @@ function playSong() {
         .setURL(resource.metadata.url)
         .setAuthor('Now playing', 'https://images.emojiterra.com/twitter/v13.1/512px/1f972.png',
             resource.metadata.url)
-        .setDescription('There are ' + queue.length + ' more songs in the queue')
+        .setDescription(description)
         .setThumbnail(resource.metadata.thumbnail)
         .addFields(
             { name: 'Song duration', value: resource.metadata.duration },
@@ -221,7 +230,7 @@ async function addToQueue(rest) {
         .setURL(resource.metadata.url)
         .setAuthor('Queued song', 'https://images.emojiterra.com/twitter/v13.1/512px/1f972.png',
             resource.metadata.url)
-        .setDescription('There are ' + queue.length + ' more songs in the queue')
+        .setDescription('Remaining songs in queue until play: ' + String(queue.length - 1))
         .setThumbnail(resource.metadata.thumbnail)
         .addFields(
             { name: 'Song duration', value: resource.metadata.duration },
@@ -232,6 +241,8 @@ async function addToQueue(rest) {
     channel.send({ embeds: [Embed] });
 
 }
+
+
 
 async function execute(message) {
     let [first, ...rest] = message.content.split(' ')
@@ -253,7 +264,7 @@ async function execute(message) {
     }
 
     if(!connection) {
-
+        console.log("here")
         await addResource(rest)
         // player.play(getNextResource())
         playSong()
@@ -264,6 +275,8 @@ async function execute(message) {
             adapterCreator: message.guild.voiceAdapterCreator
         })
 
+
+
         await entersState(connection, VoiceConnectionStatus.Ready, 30e3);
 
         connection.subscribe(player);
@@ -273,20 +286,14 @@ async function execute(message) {
         addToQueue(rest)
         if (player.state.status === "idle") {
             console.log("im idle")
-            // player.play(getNextResource())
             playSong()
         }
     }
 
-
-
-
-
-
 }
 
 player.on(AudioPlayerStatus.Idle, interaction => {
-    console.log("Finished playing")
+
     channel.send("Finished playing")
 
     if(queue.length > 0) {
