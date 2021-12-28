@@ -19,6 +19,7 @@ dotenv.config();
 const token = process.env.BOT_TOKEN
 const prefix = "!"
 
+play.authorization()
 
 const commands = [{
     name: 'ping',
@@ -163,6 +164,7 @@ async function addResource(rest) {
 
         if (rest.includes("https")) {
             yt_info = await play.search(rest, {limit : 1})
+            console.log(yt_info)
             url = rest;
         } else {
             yt_info = await play.search(rest, { limit : 1 })
@@ -283,7 +285,7 @@ async function execute(message) {
 
 
     } else {
-        addToQueue(rest)
+        await addToQueue(rest)
         if (player.state.status === "idle") {
             console.log("im idle")
             playSong()
@@ -307,6 +309,7 @@ player.on(AudioPlayerStatus.Idle, interaction => {
 player.on('error', error => {
     console.error(error);
 });
+
 
 
 client.login(token);

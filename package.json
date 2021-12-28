@@ -18,7 +18,7 @@
     "express": "^4.17.2",
     "ffmpeg-static": "^4.4.0",
     "libsodium-wrappers": "^0.7.9",
-    "play-dl": "^1.6.2",
+    "play-dl": "^1.6.8",
     "youtube-search-api": "^1.0.11"
   },
   "devDependencies": {
