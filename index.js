@@ -1,4 +1,3 @@
-// const express = require("express");
 const { joinVoiceChannel,
     createAudioPlayer,
     createAudioResource,
@@ -13,6 +12,10 @@ const { Routes } = require('discord-api-types/v9');
 const command_list = require('./commands')
 const youtube=require('youtube-search-api');
 // const app = express();
+
+let bots = require('./botInstance')
+
+
 
 const dotenv = require('dotenv');
 dotenv.config();
@@ -45,10 +48,12 @@ const rest = new REST({ version: '9' }).setToken(token);
     }
 })();
 
-const queue = [];
+let queue = [];
 
 let connection;
 let channel;
+
+let botMap = new Map()
 
 
 
@@ -80,25 +85,31 @@ client.on('messageCreate', (message) => {
     } else if(message.content === "bot get him") {
         message.channel.send("you fell off + ratio + who asked + no u + deez nuts + radio + don't care + didn't ask + caught in 4k + cope + seethe + GG + your mom's + the hood watches markiplier now + grow up + L + L (part 2) + retweet + ligma + taco bell tortilla crunch + think outside the bun + ur benched + ur a wrench + i own you + ur dad fell off + my dad could beat ur dad up + silver elite + tryhard + boomer + ur beta + L (part 3) + ur sus + quote tweet + you're cringe + i did your mom + you bought monkey nft + you're weirdchamp + you're a clown + my dad owns steam")
     } else if(message.content ==="!leave") {
-        command_list.leave(connection)
-        connection = null;
+        let current_bot = botMap.get(message.guild.id)
+        command_list.leave(current_bot.connection)
+        current_bot.connection = null;
+        current_bot.player.stop()
+        current_bot.queue = []
     } else if(message.content.startsWith("!skip")) {
-        if(queue.length === 0) {
-            player.pause()
+        let current_bot = botMap.get(message.guild.id)
+        if(current_bot.queue.length === 0) {
+            current_bot.player.pause()
         } else {
-            playSong()
+            playSong(message.guild.id)
             //player.play(getNextResource())
         }
 
     } else if(message.content.startsWith("!pause")) {
-        player.pause()
+        let current_bot = botMap.get(message.guild.id)
+        current_bot.player.pause()
     } else if (message.content.startsWith("!resume")) {
-        player.unpause()
+        let current_bot = botMap.get(message.guild.id)
+        current_bot.player.unpause()
     } else if(message.content.startsWith("!queue")) {
-
+        let current_bot = botMap.get(message.guild.id)
         let fields = []
 
-        queue.forEach(element => {
+        current_bot.queue.forEach(element => {
             let field = { name: element.metadata.title, value: element.metadata.url }
             fields.push(field)
         })
@@ -114,7 +125,7 @@ client.on('messageCreate', (message) => {
 
             .setTimestamp()
 
-        channel.send({ embeds: [Embed] });
+        current_bot.channel.send({ embeds: [Embed] });
 
     } else if(message.content.startsWith("!clean")) {
         let [first, ...rest] = message.content.split(' ')
@@ -136,7 +147,8 @@ let player = createAudioPlayer({
     }
 })
 
-async function addResource(rest) {
+async function addResource(rest, guildID) {
+    let current_bot = botMap.get(guildID)
     let url;
     let yt_info
 
@@ -156,7 +168,7 @@ async function addResource(rest) {
                 }
             })
 
-            queue.push(resource)
+            current_bot.queue.push(resource)
 
         }
         console.log(songs_info.videos)
@@ -183,22 +195,25 @@ async function addResource(rest) {
             }
         })
 
-        queue.push(resource)
+        current_bot.queue.push(resource)
     }
 
 
 }
 
-function getNextResource() {
-    return queue.shift()
+function getNextResource(guildID) {
+    let current_bot = botMap.get(guildID)
+    return current_bot.queue.shift()
 }
 
-function playSong() {
-    const resource = getNextResource()
+function playSong(guildID) {
+    let current_bot = botMap.get(guildID)
+
+    const resource = getNextResource(guildID)
     let description;
-    if (queue.length > 0) {
-        description = 'Next song in queue is ' + queue[0].metadata.title
-    } else if (queue.length === 0) {
+    if (current_bot.queue.length > 0) {
+        description = 'Next song in queue is ' + current_bot.queue[0].metadata.title
+    } else if (current_bot.queue.length === 0) {
         description = 'Queue is empty'
     }
 
@@ -216,15 +231,18 @@ function playSong() {
 
         .setTimestamp()
 
-    channel.send({ embeds: [Embed] });
+    current_bot.channel.send({ embeds: [Embed] });
 
-    player.play(resource)
+    current_bot.player.play(resource)
+
 }
 
-async function addToQueue(rest) {
-    await addResource(rest)
+async function addToQueue(rest, guildID) {
+    let current_bot = botMap.get(guildID)
 
-    const resource = queue[queue.length-1]
+    await addResource(rest, guildID)
+
+    const resource = current_bot.queue[current_bot.queue.length-1]
 
     const Embed = new MessageEmbed()
         .setColor('#0099ff')
@@ -232,7 +250,7 @@ async function addToQueue(rest) {
         .setURL(resource.metadata.url)
         .setAuthor('Queued song', 'https://images.emojiterra.com/twitter/v13.1/512px/1f972.png',
             resource.metadata.url)
-        .setDescription('Remaining songs in queue until play: ' + String(queue.length - 1))
+        .setDescription('Remaining songs in queue until play: ' + String(current_bot.queue.length - 1))
         .setThumbnail(resource.metadata.thumbnail)
         .addFields(
             { name: 'Song duration', value: resource.metadata.duration },
@@ -240,17 +258,26 @@ async function addToQueue(rest) {
 
         .setTimestamp()
 
-    channel.send({ embeds: [Embed] });
+    current_bot.channel.send({ embeds: [Embed] });
 
 }
 
 
 
 async function execute(message) {
+
+    if(!botMap.has(message.guild.id)) {
+        let bot = new bots.botInstance();
+        botMap.set(message.guild.id, bot);
+    }
+
+    let currentBot = botMap.get(message.guild.id)
+
+
     let [first, ...rest] = message.content.split(' ')
     rest = rest.join(' ')
 
-    channel = message.channel
+    currentBot.channel = message.channel
     const voiceChannel = message.member.voice.channel;
 
     if (!voiceChannel)
@@ -265,13 +292,13 @@ async function execute(message) {
         );
     }
 
-    if(!connection) {
+    if(!currentBot.connection) {
         console.log("here")
-        await addResource(rest)
-        // player.play(getNextResource())
-        playSong()
+        await addResource(rest, message.guild.id)
+        //currentBot.player.play(getNextResource(message.guild.id))
+        playSong(message.guild.id)
 
-        connection = joinVoiceChannel({
+        currentBot.connection = joinVoiceChannel({
             channelId: voiceChannel.id,
             guildId: message.guild.id,
             adapterCreator: message.guild.voiceAdapterCreator
@@ -279,32 +306,35 @@ async function execute(message) {
 
 
 
-        await entersState(connection, VoiceConnectionStatus.Ready, 30e3);
+        await entersState(currentBot.connection, VoiceConnectionStatus.Ready, 30e3);
 
-        connection.subscribe(player);
+        currentBot.connection.subscribe(currentBot.player);
 
 
     } else {
-        await addToQueue(rest)
-        if (player.state.status === "idle") {
+        await addToQueue(rest, message.guild.id)
+        if (currentBot.player.state.status === "idle") {
             console.log("im idle")
-            playSong()
+            playSong(message.guild.id)
         }
     }
 
+    botMap.forEach((value, key, map) => {
+
+        value.player.on(AudioPlayerStatus.Idle, interaction => {
+
+            value.channel.send("Finished playing")
+
+            if(value.queue.length > 0) {
+                value.channel.send("Playing next song")
+                // player.play(getNextResource())
+                playSong(key)
+
+            }
+        });
+    });
+
 }
-
-player.on(AudioPlayerStatus.Idle, interaction => {
-
-    channel.send("Finished playing")
-
-    if(queue.length > 0) {
-        channel.send("Playing next song")
-        // player.play(getNextResource())
-        playSong()
-
-    }
-});
 
 player.on('error', error => {
     console.error(error);
