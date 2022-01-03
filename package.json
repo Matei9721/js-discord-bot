@@ -22,6 +22,7 @@
     "youtube-search-api": "^1.0.11"
   },
   "devDependencies": {
+    "axios": "^0.24.0",
     "discord-api-types": "^0.25.2",
     "ytdl-core": "^4.9.2"
   }

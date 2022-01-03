@@ -15,14 +15,14 @@ const youtube=require('youtube-search-api');
 
 let bots = require('./botInstance')
 
-
+const axios = require("axios")
 
 const dotenv = require('dotenv');
 dotenv.config();
 const token = process.env.BOT_TOKEN
 const prefix = "!"
 
-play.authorization()
+//play.authorization()
 
 const commands = [{
     name: 'ping',
@@ -61,12 +61,35 @@ const { Client, Intents, MessageEmbed  } = require('discord.js');
 
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_VOICE_STATES] });
 
+function getAnime() {
+    axios.get("https://www.toptal.com/developers/feed2json/convert?url=https://www.livechart.me/feeds/episodes").then(
+        data => {
+            console.log(data.data)
+            for(let i = 0; i < data.data.items.length; i++) {
+                //console.log(data.data.items[i])
+                if(data.data.items[i]["title"].includes("Kimetsu no Yaiba") ||
+                    data.data.items[i]["title"].includes("Platinum End") ||
+                    data.data.items[i]["title"].includes("Genjitsu Shugi Yuusha")) {
+                    let message = "Episode " + String(data.data.items[i]["title"]).split("#")[1] + " of " +
+                        String(data.data.items[i]["title"]).split("#")[0] + " came out today!"
+                    client.channels.cache.get("916458075995656252").send(message)
+                }
+            }
+        }
+    )
+}
+
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
 
     const guildID = '400698493301424129'
     const guild = client.guilds.cache.get(guildID)
 
+    // setTimeout(getAnime, 10000)
+
+    // Runs methods once a day
+    // setInterval(myFunction, 1000 * 60 * 60 * 24);
+    getAnime()
 });
 
 client.on('interactionCreate', async interaction => {
@@ -118,7 +141,7 @@ client.on('messageCreate', (message) => {
             .setColor('#0099ff')
             .setAuthor('Songs in queue:', 'https://images.emojiterra.com/twitter/v13.1/512px/1f972.png',
               )
-            .setDescription('There are ' + queue.length + ' more songs in the queue')
+            .setDescription('There are ' + current_bot.queue.length + ' more songs in the queue')
             .addFields(
                 fields
             )
@@ -148,6 +171,7 @@ let player = createAudioPlayer({
 })
 
 async function addResource(rest, guildID) {
+    let first_song = true;
     let current_bot = botMap.get(guildID)
     let url;
     let yt_info
@@ -170,8 +194,17 @@ async function addResource(rest, guildID) {
 
             current_bot.queue.push(resource)
 
+            if(first_song) {
+                if (current_bot.player.state.status === "idle") {
+                    playSong(guildID)
+                }
+                first_song = false
+            }
+
         }
-        console.log(songs_info.videos)
+        first_song = true;
+        console.log("finished loding all song")
+        //console.log(songs_info.videos)
     } else{
 
         if (rest.includes("https")) {
@@ -197,6 +230,8 @@ async function addResource(rest, guildID) {
 
         current_bot.queue.push(resource)
     }
+
+    first_song = true;
 
 
 }
@@ -269,6 +304,18 @@ async function execute(message) {
     if(!botMap.has(message.guild.id)) {
         let bot = new bots.botInstance();
         botMap.set(message.guild.id, bot);
+
+        bot.player.on(AudioPlayerStatus.Idle, interaction => {
+
+            bot.channel.send("Finished playing")
+
+            if(bot.queue.length > 0) {
+                bot.channel.send("Playing next song")
+                // player.play(getNextResource())
+                playSong(message.guild.id)
+
+            }
+        });
     }
 
     let currentBot = botMap.get(message.guild.id)
@@ -294,9 +341,6 @@ async function execute(message) {
 
     if(!currentBot.connection) {
         console.log("here")
-        await addResource(rest, message.guild.id)
-        //currentBot.player.play(getNextResource(message.guild.id))
-        playSong(message.guild.id)
 
         currentBot.connection = joinVoiceChannel({
             channelId: voiceChannel.id,
@@ -304,11 +348,18 @@ async function execute(message) {
             adapterCreator: message.guild.voiceAdapterCreator
         })
 
-
-
         await entersState(currentBot.connection, VoiceConnectionStatus.Ready, 30e3);
 
         currentBot.connection.subscribe(currentBot.player);
+
+        await addResource(rest, message.guild.id)
+        //currentBot.player.play(getNextResource(message.guild.id))
+        if (currentBot.player.state.status === "idle") {
+            console.log("im idle")
+            playSong(message.guild.id)
+        }
+
+
 
 
     } else {
@@ -318,21 +369,6 @@ async function execute(message) {
             playSong(message.guild.id)
         }
     }
-
-    botMap.forEach((value, key, map) => {
-
-        value.player.on(AudioPlayerStatus.Idle, interaction => {
-
-            value.channel.send("Finished playing")
-
-            if(value.queue.length > 0) {
-                value.channel.send("Playing next song")
-                // player.play(getNextResource())
-                playSong(key)
-
-            }
-        });
-    });
 
 }
 
