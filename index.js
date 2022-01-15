@@ -19,7 +19,7 @@ dotenv.config();
 const token = process.env.BOT_TOKEN
 const prefix = "!"
 
-play.authorization()
+//play.authorization()
 
 const commands = [{
     name: 'ping',
@@ -50,6 +50,9 @@ const queue = [];
 let connection;
 let channel;
 
+let bots = require('./botInstance')
+
+let botMap = new Map()
 
 
 const { Client, Intents, MessageEmbed  } = require('discord.js');
@@ -76,46 +79,46 @@ client.on('messageCreate', (message) => {
     const guildID = '400698493301424129'
 
     if(message.content.startsWith("!play")){
-        execute(message);
+
+        if(!botMap.has(message.guild.id)) {
+            let bot = new bots.botInstance();
+            botMap.set(message.guild.id, bot);
+        }
+
+        botMap.get(message.guild.id).execute(message);
+
     } else if(message.content === "bot get him") {
         message.channel.send("you fell off + ratio + who asked + no u + deez nuts + radio + don't care + didn't ask + caught in 4k + cope + seethe + GG + your mom's + the hood watches markiplier now + grow up + L + L (part 2) + retweet + ligma + taco bell tortilla crunch + think outside the bun + ur benched + ur a wrench + i own you + ur dad fell off + my dad could beat ur dad up + silver elite + tryhard + boomer + ur beta + L (part 3) + ur sus + quote tweet + you're cringe + i did your mom + you bought monkey nft + you're weirdchamp + you're a clown + my dad owns steam")
     } else if(message.content ==="!leave") {
-        command_list.leave(connection)
-        connection = null;
-    } else if(message.content.startsWith("!skip")) {
-        if(queue.length === 0) {
-            player.pause()
-        } else {
-            playSong()
-            //player.play(getNextResource())
+        if(botMap.has(message.guild.id)) {
+            command_list.leave(botMap.get(message.guild.id).connection)
+            botMap.get(message.guild.id).connection = null;
         }
 
+    } else if(message.content.startsWith("!skip")) {
+        if(botMap.has(message.guild.id)) {
+            let currentBot = botMap.get(message.guild.id);
+            if(currentBot.queue.length === 0) {
+                currentBot.player.pause()
+            } else {
+                currentBot.playSong()
+                //player.play(getNextResource())
+            }
+        }
+
+
     } else if(message.content.startsWith("!pause")) {
-        player.pause()
+        if(botMap.has(message.guild.id)) {
+            botMap.get(message.guild.id).player.pause()
+        }
+
     } else if (message.content.startsWith("!resume")) {
-        player.unpause()
+        if(botMap.has(message.guild.id)){
+            botMap.get(message.guild.id).player.unpause()
+        }
+
     } else if(message.content.startsWith("!queue")) {
-
-        let fields = []
-
-        queue.forEach(element => {
-            let field = { name: element.metadata.title, value: element.metadata.url }
-            fields.push(field)
-        })
-
-        const Embed = new MessageEmbed()
-            .setColor('#0099ff')
-            .setAuthor('Songs in queue:', 'https://images.emojiterra.com/twitter/v13.1/512px/1f972.png',
-              )
-            .setDescription('There are ' + queue.length + ' more songs in the queue')
-            .addFields(
-                fields
-            )
-
-            .setTimestamp()
-
-        channel.send({ embeds: [Embed] });
-
+        botMap.get(message.guild.id).getQueue();
     } else if(message.content.startsWith("!clean")) {
         let [first, ...rest] = message.content.split(' ')
         rest = rest.join(' ')
@@ -129,187 +132,6 @@ client.on('messageCreate', (message) => {
     }
 
 })
-
-let player = createAudioPlayer({
-    behaviors: {
-        noSubscriber: NoSubscriberBehavior.Play
-    }
-})
-
-async function addResource(rest) {
-    let url;
-    let yt_info
-
-    if(rest.includes("playlist")) {
-        let songs_info = await play.playlist_info(rest)
-
-        for(let i=0; i<songs_info.videos.length;i++) {
-
-            let stream = await play.stream(songs_info.videos[i].url)
-            let resource = createAudioResource(stream.stream, {
-                inputType : stream.type,
-                metadata : {
-                    url : songs_info.videos[i].url,
-                    title : songs_info.videos[i].title,
-                    duration : songs_info.videos[i].durationRaw,
-                    thumbnail : songs_info.videos[i].thumbnails[0].url
-                }
-            })
-
-            queue.push(resource)
-
-        }
-        console.log(songs_info.videos)
-    } else{
-
-        if (rest.includes("https")) {
-            yt_info = await play.search(rest, {limit : 1})
-            console.log(yt_info)
-            url = rest;
-        } else {
-            yt_info = await play.search(rest, { limit : 1 })
-            url = yt_info[0].url
-        }
-
-        console.log(url)
-        let stream = await play.stream(url)
-        let resource = createAudioResource(stream.stream, {
-            inputType : stream.type,
-            metadata : {
-                url : url,
-                title : yt_info[0].title,
-                duration : yt_info[0].durationRaw,
-                thumbnail : yt_info[0].thumbnails[0].url
-            }
-        })
-
-        queue.push(resource)
-    }
-
-
-}
-
-function getNextResource() {
-    return queue.shift()
-}
-
-function playSong() {
-    const resource = getNextResource()
-    let description;
-    if (queue.length > 0) {
-        description = 'Next song in queue is ' + queue[0].metadata.title
-    } else if (queue.length === 0) {
-        description = 'Queue is empty'
-    }
-
-    const Embed = new MessageEmbed()
-        .setColor('#0099ff')
-        .setTitle(resource.metadata.title)
-        .setURL(resource.metadata.url)
-        .setAuthor('Now playing', 'https://images.emojiterra.com/twitter/v13.1/512px/1f972.png',
-            resource.metadata.url)
-        .setDescription(description)
-        .setThumbnail(resource.metadata.thumbnail)
-        .addFields(
-            { name: 'Song duration', value: resource.metadata.duration },
-        )
-
-        .setTimestamp()
-
-    channel.send({ embeds: [Embed] });
-
-    player.play(resource)
-}
-
-async function addToQueue(rest) {
-    await addResource(rest)
-
-    const resource = queue[queue.length-1]
-
-    const Embed = new MessageEmbed()
-        .setColor('#0099ff')
-        .setTitle(resource.metadata.title)
-        .setURL(resource.metadata.url)
-        .setAuthor('Queued song', 'https://images.emojiterra.com/twitter/v13.1/512px/1f972.png',
-            resource.metadata.url)
-        .setDescription('Remaining songs in queue until play: ' + String(queue.length - 1))
-        .setThumbnail(resource.metadata.thumbnail)
-        .addFields(
-            { name: 'Song duration', value: resource.metadata.duration },
-        )
-
-        .setTimestamp()
-
-    channel.send({ embeds: [Embed] });
-
-}
-
-
-
-async function execute(message) {
-    let [first, ...rest] = message.content.split(' ')
-    rest = rest.join(' ')
-
-    channel = message.channel
-    const voiceChannel = message.member.voice.channel;
-
-    if (!voiceChannel)
-        return message.channel.send(
-            "I am an idiot bot and I don't know what to do if you are not in a voice room"
-        );
-
-    const permissions = voiceChannel.permissionsFor(message.client.user);
-    if (!permissions.has("CONNECT") || !permissions.has("SPEAK")) {
-        return message.channel.send(
-            "I need the permissions to join and speak in your voice channel!"
-        );
-    }
-
-    if(!connection) {
-        console.log("here")
-        await addResource(rest)
-        // player.play(getNextResource())
-        playSong()
-
-        connection = joinVoiceChannel({
-            channelId: voiceChannel.id,
-            guildId: message.guild.id,
-            adapterCreator: message.guild.voiceAdapterCreator
-        })
-
-
-
-        await entersState(connection, VoiceConnectionStatus.Ready, 30e3);
-
-        connection.subscribe(player);
-
-
-    } else {
-        await addToQueue(rest)
-        if (player.state.status === "idle") {
-            console.log("im idle")
-            playSong()
-        }
-    }
-
-}
-
-player.on(AudioPlayerStatus.Idle, interaction => {
-
-    channel.send("Finished playing")
-
-    if(queue.length > 0) {
-        channel.send("Playing next song")
-        // player.play(getNextResource())
-        playSong()
-
-    }
-});
-
-player.on('error', error => {
-    console.error(error);
-});
-
 
 
 client.login(token);
