@@ -22,9 +22,20 @@ To run the bot all you have to do is clone the repository and in the main direct
 - Currently, slash commands are not fully implemented. When and if they are implemented, they will also be made global such that you don't have to make requests to the discord API for each new guild.
 - There is no database support yet, but in the future I do plan to add MySQL support for extra features.
 
-## Upcoming updated:
+## (Hopefully) Upcoming updates:
 
 - Code refactoring and implementation of slash commands.
 - Better error handling
 - Anime notification functionality - The bot will send notifications to a certain guild room whenever a new episode from a favourite anime has aired.
+
+## Screenshots
+![playing a song](https://user-images.githubusercontent.com/60573633/149918018-4f23df94-f0c3-4ee4-aaac-65de66099fd6.png)
+
+![queueing a song](https://user-images.githubusercontent.com/60573633/149918320-11ee50f2-8fd5-487d-881b-e6bf7873cd11.png)
+
+![image](https://user-images.githubusercontent.com/60573633/149918610-54506c19-3440-4375-9ecd-a4c23979425e.png)
+
+
+
+
 
