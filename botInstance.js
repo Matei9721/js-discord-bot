@@ -22,7 +22,13 @@ class botInstance {
         this.connection = null;
         this.channel = null;
         this.voiceChannel = null;
+        this.player = null;
 
+        this.setPLayer();
+
+    }
+
+    setPLayer() {
         this.player = createAudioPlayer({
             behaviors: {
                 noSubscriber: NoSubscriberBehavior.Play
@@ -31,16 +37,14 @@ class botInstance {
 
         this.player.on(AudioPlayerStatus.Idle, interaction => {
 
-            this.channel.send("Finished playing")
+            //this.channel.send("Finished playing")
 
             if(this.queue.length > 0) {
-                this.channel.send("Playing next song")
-                // player.play(getNextResource())
+                //this.channel.send("Playing next song")
                 this.playSong()
 
             }
         });
-
     }
 
 
@@ -53,12 +57,9 @@ class botInstance {
         if(rest.includes("playlist")) {
             let songs_info
 
-            try {
-                songs_info = await play.playlist_info(rest)
-            } catch (err) {
-                this.channel.send("There was an error loading the playlist or song (Check for unavailable videos)")
 
-            }
+            songs_info = await play.playlist_info(rest)
+
 
 
             for(let i=0; i<songs_info.videos.length;i++) {
@@ -171,6 +172,11 @@ class botInstance {
     }
 
     async addToQueue(rest) {
+        if(this.player.state.status === "idle") {
+            await this.addResource(rest)
+            return
+        }
+
         await this.addResource(rest)
 
         const resource = this.queue[this.queue.length-1]
@@ -191,6 +197,16 @@ class botInstance {
 
         this.channel.send({ embeds: [Embed] });
 
+    }
+
+    errorMessage(channel) {
+        const Error = new MessageEmbed()
+            .setColor('#ff0000')
+            .setTitle("Error while loading resource or playlist")
+            .setDescription('Check the link of the resource or unavailable videos')
+            .setTimestamp()
+
+        channel.send({ embeds: [Error] });
     }
 
 
@@ -229,19 +245,38 @@ class botInstance {
 
 
             console.log("here")
-            await this.addResource(rest)
-            // player.play(getNextResource())
+            try{
+                await this.addResource(rest)
+            } catch (err) {
+                console.log(err)
+                //this.errorMessage(this.channel)
+            }
+
             if (this.player.state.status === "idle") {
                 console.log("im idle")
-                this.playSong()
+                try {
+                    this.playSong()
+                } catch (err) {
+                    this.errorMessage(this.channel)
+                    console.log(err)
+
+                }
+
             }
 
         } else {
-            await this.addToQueue(rest)
-            if (this.player.state.status === "idle") {
-                console.log("im idle")
-                this.playSong()
+            try {
+                await this.addToQueue(rest)
+                if (this.player.state.status === "idle") {
+                    console.log("im idle")
+
+                    this.playSong()
+                }
+            } catch (err) {
+                this.errorMessage(this.channel)
+                console.log(err)
             }
+
         }
 
     }

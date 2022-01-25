@@ -19,7 +19,7 @@ dotenv.config();
 const token = process.env.BOT_TOKEN
 const prefix = "!"
 
-//play.authorization()
+play.authorization()
 
 const commands = [{
     name: 'ping',
@@ -84,15 +84,28 @@ client.on('messageCreate', (message) => {
             let bot = new bots.botInstance();
             botMap.set(message.guild.id, bot);
         }
+        try{
+            botMap.get(message.guild.id).execute(message);
+        } catch (err) {
+            console.log("Error")
+        }
 
-        botMap.get(message.guild.id).execute(message);
 
-    } else if(message.content === "bot get him") {
-        message.channel.send("you fell off + ratio + who asked + no u + deez nuts + radio + don't care + didn't ask + caught in 4k + cope + seethe + GG + your mom's + the hood watches markiplier now + grow up + L + L (part 2) + retweet + ligma + taco bell tortilla crunch + think outside the bun + ur benched + ur a wrench + i own you + ur dad fell off + my dad could beat ur dad up + silver elite + tryhard + boomer + ur beta + L (part 3) + ur sus + quote tweet + you're cringe + i did your mom + you bought monkey nft + you're weirdchamp + you're a clown + my dad owns steam")
+    } else if(message.content.startsWith("bot get him")) {
+        message.channel.send("you fell off + ratio + who asked + no u + deez nuts + radio + don't care + didn't ask +" +
+            " caught in 4k + cope + seethe + GG + your mom's + the hood watches markiplier now + grow up + L +" +
+            " L (part 2) + retweet + ligma + taco bell tortilla crunch + think outside the bun + ur benched + " +
+            "ur a wrench + i own you + ur dad fell off + my dad could beat ur dad up + silver elite + tryhard +" +
+            " boomer + ur beta + L (part 3) + ur sus + quote tweet + you're cringe + i did your mom +" +
+            " you bought monkey nft + you're weirdchamp + you're a clown + my dad owns steam")
+
+        // This is cursed
     } else if(message.content ==="!leave") {
         if(botMap.has(message.guild.id)) {
             command_list.leave(botMap.get(message.guild.id).connection)
             botMap.get(message.guild.id).connection = null;
+            botMap.get(message.guild.id).queue = [];
+            botMap.get(message.guild.id).setPLayer();
         }
 
     } else if(message.content.startsWith("!skip")) {
