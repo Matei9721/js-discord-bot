@@ -1,8 +1,6 @@
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
 const fs = require('fs');
-
-
 // Initialize env file for BOT TOKEN
 const dotenv = require('dotenv');
 dotenv.config();
@@ -19,12 +17,11 @@ for (const file of commandFiles) {
 
 const rest = new REST({ version: '9' }).setToken(token);
 
-(async () => {
+module.exports = async function () {
     try {
         const guildID = '400698493301424129'
         const CLIENT_ID = '916452158814175293'
         console.log('Started refreshing application (/) commands.');
-
         await rest.put(
             Routes.applicationGuildCommands(CLIENT_ID, guildID),
             { body: commands },
@@ -34,4 +31,5 @@ const rest = new REST({ version: '9' }).setToken(token);
     } catch (error) {
         console.error(error);
     }
-})();
+};
+

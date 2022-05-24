@@ -7,43 +7,19 @@ const { joinVoiceChannel,
     AudioPlayerStatus,
     NoSubscriberBehavior,
     VoiceConnectionStatus, } = require('@discordjs/voice');
-const { REST } = require('@discordjs/rest');
 const play = require('play-dl')
-const { Routes } = require('discord-api-types/v9');
 const command_list = require('./commands')
 const youtube=require('youtube-search-api');
-// const app = express();
 
 const dotenv = require('dotenv');
 dotenv.config();
 const token = process.env.BOT_TOKEN
 const prefix = "!"
 
+//Initialize slash commands
+const slash = require("./commandRegister")();
+
 play.authorization()
-
-const commands = [{
-    name: 'ping',
-    description: 'Replies with Pong!'
-}];
-
-const rest = new REST({ version: '9' }).setToken(token);
-
-(async () => {
-    try {
-        const guildID = '400698493301424129'
-        const CLIENT_ID = '916452158814175293'
-        console.log('Started refreshing application (/) commands.');
-
-        await rest.put(
-            Routes.applicationGuildCommands(CLIENT_ID, guildID),
-            { body: commands },
-        );
-
-        console.log('Successfully reloaded application (/) commands.');
-    } catch (error) {
-        console.error(error);
-    }
-})();
 
 const queue = [];
 
