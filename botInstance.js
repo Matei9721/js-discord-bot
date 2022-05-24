@@ -58,7 +58,7 @@ class botInstance {
             let songs_info
 
 
-            songs_info = await play.playlist_info(rest)
+            songs_info = await play.playlist_info(rest, {incomplete : true})
 
 
 
@@ -139,11 +139,11 @@ class botInstance {
         this.channel.send({ embeds: [Embed] });
     }
 
-     getNextResource() {
+    getNextResource() {
         return this.queue.shift()
     }
 
-     playSong() {
+    playSong() {
         const resource = this.getNextResource()
         let description;
         if (this.queue.length > 0) {
@@ -213,6 +213,8 @@ class botInstance {
     async execute(message) {
         let [first, ...rest] = message.content.split(' ')
         rest = rest.join(' ')
+
+        rest = rest.split("&")[0];
 
         this.channel = message.channel
         const voiceChannel = message.member.voice.channel;
