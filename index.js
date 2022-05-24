@@ -1,12 +1,3 @@
-// const express = require("express");
-const { joinVoiceChannel,
-    createAudioPlayer,
-    createAudioResource,
-    entersState,
-    StreamType,
-    AudioPlayerStatus,
-    NoSubscriberBehavior,
-    VoiceConnectionStatus, } = require('@discordjs/voice');
 const play = require('play-dl')
 const command_list = require('./commands')
 const youtube=require('youtube-search-api');
@@ -20,14 +11,7 @@ const prefix = "!"
 const slash = require("./commandRegister")();
 
 play.authorization()
-
-const queue = [];
-
-let connection;
-let channel;
-
 let bots = require('./botInstance')
-
 let botMap = new Map()
 
 

@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
 // <:weeb:814805991002210315>
-let bots = require('../botInstance')
+let bots = require('../botInstanceSlash')
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -15,14 +15,15 @@ module.exports = {
 
     async execute(interaction, client) {
         if(!client.botMap.has(interaction.guild.id)) {
-            let bot = new bots.botInstance();
+            let bot = new bots.botInstanceSlash();
             client.botMap.set(interaction.guild.id, bot);
         }
         try {
-            await client.botMap.get(interaction.guild.id).execute(interaction, interaction.options.getString("song"));
-            interaction.reply("᲼᲼")
+            await client.botMap.get(interaction.guild.id).executeSong(interaction);
         } catch (err) {
             console.log(err)
         }
+        interaction.reply("Gusi?");
+        interaction.deleteReply();
     },
 };
