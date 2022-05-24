@@ -14,17 +14,15 @@ module.exports = {
 
 
     async execute(interaction, client) {
-        console.log(interaction.options.getString("song"))
         if(!client.botMap.has(interaction.guild.id)) {
             let bot = new bots.botInstance();
             client.botMap.set(interaction.guild.id, bot);
         }
         try {
-
-            await client.botMap.get(interaction.guild.id).executeSong(interaction, interaction.options.getString("song"));
+            await client.botMap.get(interaction.guild.id).execute(interaction, interaction.options.getString("song"));
             interaction.reply("᲼᲼")
         } catch (err) {
-            console.log("Error")
+            console.log(err)
         }
     },
 };

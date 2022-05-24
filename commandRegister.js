@@ -5,9 +5,9 @@ const fs = require('fs');
 const dotenv = require('dotenv');
 dotenv.config();
 
-const commands = [];
 const token = process.env.BOT_TOKEN
 
+const commands = [];
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
 for (const file of commandFiles) {
@@ -32,4 +32,3 @@ module.exports = async function () {
         console.error(error);
     }
 };
-

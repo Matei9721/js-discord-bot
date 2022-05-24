@@ -31,23 +31,42 @@ let bots = require('./botInstance')
 let botMap = new Map()
 
 
-const { Client, Intents, MessageEmbed  } = require('discord.js');
+const { Client, Intents, MessageEmbed, Collection} = require('discord.js');
+const fs = require("fs");
 
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_VOICE_STATES] });
 
+//Give map for playlists in client
+client.botMap = new Map();
+
+//Give command info to the client variable
+client.commands = new Collection();
+const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
+for (const file of commandFiles) {
+    const command = require(`./commands/${file}`);
+    client.commands.set(command.data.name, command);
+}
+
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
-
     const guildID = '400698493301424129'
     const guild = client.guilds.cache.get(guildID)
-
 });
 
+//Main interaction logic for slash commands
 client.on('interactionCreate', async interaction => {
+    //Note: Webstorm might not see commandName, but when running it works
     if (!interaction.isCommand()) return;
 
-    if (interaction.commandName === 'ping') {
-        await interaction.reply('Pong!');
+    const command = client.commands.get(interaction.commandName);
+
+    if(!command) return;
+
+    try {
+        await command.execute(interaction, client);
+    } catch (e) {
+        console.log(e);
+        await interaction.reply("Check the console for errors!");
     }
 });
 
@@ -55,7 +74,6 @@ client.on('messageCreate', (message) => {
     const guildID = '400698493301424129'
 
     if(message.content.startsWith("!play")){
-
         if(!botMap.has(message.guild.id)) {
             let bot = new bots.botInstance();
             botMap.set(message.guild.id, bot);
