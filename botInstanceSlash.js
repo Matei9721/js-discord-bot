@@ -1,27 +1,21 @@
-const { joinVoiceChannel,
-    createAudioPlayer,
-    createAudioResource,
-    entersState,
-    AudioPlayerStatus,
-    NoSubscriberBehavior,
-    VoiceConnectionStatus, } = require('@discordjs/voice');
-const play = require('play-dl')
+const {joinVoiceChannel, entersState, VoiceConnectionStatus, createAudioPlayer, NoSubscriberBehavior, AudioPlayerStatus,
+    createAudioResource
+} = require("@discordjs/voice");
 const {MessageEmbed} = require("discord.js");
+const play = require("play-dl");
 
-
-class botInstance {
+class botInstanceSlash {
 
     constructor() {
         this.queue = [];
         this.connection = null;
         this.channel = null;
         this.player = null;
-
-        this.setPLayer();
+        this.setPlayer();
 
     }
 
-    setPLayer() {
+    setPlayer() {
         this.player = createAudioPlayer({
             behaviors: {
                 noSubscriber: NoSubscriberBehavior.Play
@@ -29,18 +23,11 @@ class botInstance {
         })
 
         this.player.on(AudioPlayerStatus.Idle, interaction => {
-
-            //this.channel.send("Finished playing")
-
             if(this.queue.length > 0) {
-                //this.channel.send("Playing next song")
                 this.playSong()
-
             }
         });
     }
-
-
 
     async addResource(rest) {
         let url;
@@ -48,15 +35,8 @@ class botInstance {
         let first_song = true;
 
         if(rest.includes("playlist")) {
-            let songs_info
-
-
-            songs_info = await play.playlist_info(rest, {incomplete : true})
-
-
-
+            let songs_info = await play.playlist_info(rest, {incomplete : true})
             for(let i=0; i<songs_info.videos.length;i++) {
-
                 let stream = await play.stream(songs_info.videos[i].url)
                 let resource = createAudioResource(stream.stream, {
                     inputType : stream.type,
@@ -71,45 +51,36 @@ class botInstance {
                 this.queue.push(resource)
 
                 if(first_song) {
-                    if (this.player.state.status === "idle") {
-                        this.playSong()
-                    }
+                    if (this.player.state.status === "idle") this.playSong()
                     first_song = false
                 }
-
             }
-            first_song = true;
-            console.log("finished loading all songs")
-        } else{
+        } else {
 
-            if (rest.includes("https")) {
+            if(rest.includes("https")) {
                 rest = rest.split("&")[0];
-                yt_info = await play.search(rest, {limit : 1})
+                yt_info = await play.search(rest, {limit: 1})
                 console.log(yt_info)
                 url = rest;
             } else {
-                yt_info = await play.search(rest, { limit : 1 })
+                yt_info = await play.search(rest, {limit: 1})
                 url = yt_info[0].url
             }
 
-            console.log(url)
             let stream = await play.stream(url)
             let resource = createAudioResource(stream.stream, {
-                inputType : stream.type,
-                metadata : {
-                    url : url,
-                    title : yt_info[0].title,
-                    duration : yt_info[0].durationRaw,
-                    thumbnail : yt_info[0].thumbnails[0].url
+                inputType: stream.type,
+                metadata: {
+                    url: url,
+                    title: yt_info[0].title,
+                    duration: yt_info[0].durationRaw,
+                    thumbnail: yt_info[0].thumbnails[0].url
                 }
             })
-
             this.queue.push(resource)
         }
 
-
     }
-
 
     getQueue() {
         let fields = []
@@ -121,15 +92,10 @@ class botInstance {
 
         const Embed = new MessageEmbed()
             .setColor('#0099ff')
-            .setAuthor('Songs in queue:', 'https://images.emojiterra.com/twitter/v13.1/512px/1f972.png',
-            )
+            .setAuthor('Songs in queue:', 'https://images.emojiterra.com/twitter/v13.1/512px/1f972.png')
             .setDescription('There are ' + this.queue.length + ' more songs in the queue')
-            .addFields(
-                fields
-            )
-
+            .addFields(fields)
             .setTimestamp()
-
         this.channel.send({ embeds: [Embed] });
     }
 
@@ -145,7 +111,6 @@ class botInstance {
         } else if (this.queue.length === 0) {
             description = 'Queue is empty'
         }
-
         const Embed = new MessageEmbed()
             .setColor('#0099ff')
             .setTitle(resource.metadata.title)
@@ -154,14 +119,9 @@ class botInstance {
                 resource.metadata.url)
             .setDescription(description)
             .setThumbnail(resource.metadata.thumbnail)
-            .addFields(
-                { name: 'Song duration', value: resource.metadata.duration },
-            )
-
+            .addFields({ name: 'Song duration', value: resource.metadata.duration })
             .setTimestamp()
-
         this.channel.send({ embeds: [Embed] });
-
         this.player.play(resource)
     }
 
@@ -193,59 +153,37 @@ class botInstance {
 
     }
 
-    errorMessage(channel) {
-        const Error = new MessageEmbed()
-            .setColor('#ff0000')
-            .setTitle("Error while loading resource or playlist")
-            .setDescription('Check the link of the resource or unavailable videos')
-            .setTimestamp()
 
-        channel.send({ embeds: [Error] });
-    }
+    async executeSong(interaction) {
+        this.channel = interaction.channel;
+        const song = interaction.options.getString("song");
+        const voiceChannel = interaction.member.voice.channel;
 
-
-    async execute(message) {
-        let [first, ...rest] = message.content.split(' ')
-        rest = rest.join(' ')
-
-        rest = rest.split("&")[0];
-
-        this.channel = message.channel
-        const voiceChannel = message.member.voice.channel;
-
-        if (!voiceChannel)
-            return message.channel.send(
-                "I am an idiot bot and I don't know what to do if you are not in a voice room"
-            );
-
-        const permissions = voiceChannel.permissionsFor(message.client.user);
-        if (!permissions.has("CONNECT") || !permissions.has("SPEAK")) {
-            return message.channel.send(
-                "I need the permissions to join and speak in your voice channel!"
-            );
+        if (!voiceChannel) {
+            interaction.reply("I am an idiot bot and I don't know what to do if you are not in a voice room");
+            return
         }
 
-        if(!this.connection) {
+        const permissions = voiceChannel.permissionsFor(interaction.member.user);
 
+        if (!permissions.has("CONNECT") || !permissions.has("SPEAK")) {
+            interaction.reply("I need the permissions to join and speak in your voice channel!");
+            return
+        }
+
+        if (!this.connection) {
             this.connection = joinVoiceChannel({
                 channelId: voiceChannel.id,
-                guildId: message.guild.id,
-                adapterCreator: message.guild.voiceAdapterCreator
+                guildId: interaction.guildId,
+                adapterCreator: interaction.guild.voiceAdapterCreator
             })
 
-
-
             await entersState(this.connection, VoiceConnectionStatus.Ready, 30e3);
-
             this.connection.subscribe(this.player);
-
-
-            console.log("here")
-            try{
-                await this.addResource(rest)
+            try {
+                await this.addResource(song)
             } catch (err) {
                 console.log(err)
-                //this.errorMessage(this.channel)
             }
 
             if (this.player.state.status === "idle") {
@@ -253,31 +191,34 @@ class botInstance {
                 try {
                     this.playSong()
                 } catch (err) {
-                    this.errorMessage(this.channel)
+                    this.errorMessageSlash(interaction)
                     console.log(err)
-
                 }
-
             }
 
         } else {
             try {
-                await this.addToQueue(rest)
+                await this.addToQueue(song)
                 if (this.player.state.status === "idle") {
-                    console.log("im idle")
-
                     this.playSong()
                 }
             } catch (err) {
-                this.errorMessage(this.channel)
+                this.errorMessageSlash(interaction)
                 console.log(err)
             }
-
         }
+    }
 
+    errorMessageSlash(interaction) {
+        const Error = new MessageEmbed()
+            .setColor('#ff0000')
+            .setTitle("Error while loading resource or playlist")
+            .setDescription('Check the link of the resource or unavailable videos')
+            .setTimestamp()
+        interaction.reply({embeds: [Error]});
     }
 }
 
 module.exports = {
-    botInstance: botInstance
+    botInstanceSlash: botInstanceSlash
 }

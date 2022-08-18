@@ -18,11 +18,12 @@
     "express": "^4.17.2",
     "ffmpeg-static": "^4.4.0",
     "libsodium-wrappers": "^0.7.9",
-    "play-dl": "^1.6.8",
-    "youtube-search-api": "^1.0.11"
+    "youtube-search-api": "^1.0.11",
+    "play-dl": "^1.9.2"
   },
   "devDependencies": {
     "discord-api-types": "^0.25.2",
     "ytdl-core": "^4.9.2"
-  }
+  },
+  "nodeVersion": "17.1.0"
 }
