@@ -1,11 +1,9 @@
 const play = require('play-dl')
 const command_list = require('./commands')
-const youtube=require('youtube-search-api');
 
 const dotenv = require('dotenv');
 dotenv.config();
 const token = process.env.BOT_TOKEN
-const prefix = "!"
 
 //Initialize slash commands
 const slash = require("./commandRegister")();
@@ -15,7 +13,7 @@ let bots = require('./botInstance')
 let botMap = new Map()
 
 
-const { Client, Intents, MessageEmbed, Collection} = require('discord.js');
+const { Client, Intents, Collection} = require('discord.js');
 const fs = require("fs");
 
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_VOICE_STATES] });
@@ -35,6 +33,34 @@ client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
     const guildID = '400698493301424129'
     const guild = client.guilds.cache.get(guildID)
+    //console.log(client.guilds.cache)
+});
+
+client.on('voiceStateUpdate', (oldState, newState) => {
+
+    // Represents a mute/deafen update
+    if(oldState.channelId === newState.channelId) return console.log('Mute/Deafen Update');
+
+    // Some connection
+    if(!oldState.channelId && newState.channelId) return console.log('Connection Update');
+
+    // Disconnection
+    if(oldState.channelId && !newState.channelId){
+        console.log('Disconnection Update');
+        // Bot was disconnected?
+
+        console.log(newState.guild.id)
+        if(botMap.has(newState.guild.id)) {
+            if (botMap.get(newState.guild.id).connection) {
+                command_list.leave(botMap.get(newState.guild.id).connection)
+            }
+            botMap.get(newState.guild.id).connection = null;
+            botMap.get(newState.guild.id).queue = [];
+            botMap.get(newState.guild.id).setPLayer();
+        }
+
+        if(newState.id === client.user.id) return console.log(`${client.user.username} was disconnected!`);
+    }
 });
 
 //Main interaction logic for slash commands
@@ -80,7 +106,9 @@ client.on('messageCreate', (message) => {
         // This is cursed
     } else if(message.content ==="!leave") {
         if(botMap.has(message.guild.id)) {
-            command_list.leave(botMap.get(message.guild.id).connection)
+            if (botMap.get(message.guild.id).connection) {
+                command_list.leave(botMap.get(message.guild.id).connection)
+            }
             botMap.get(message.guild.id).connection = null;
             botMap.get(message.guild.id).queue = [];
             botMap.get(message.guild.id).setPLayer();
@@ -90,7 +118,7 @@ client.on('messageCreate', (message) => {
         if(botMap.has(message.guild.id)) {
             let currentBot = botMap.get(message.guild.id);
             if(currentBot.queue.length === 0) {
-                currentBot.player.pause()
+                currentBot.player.stop()
             } else {
                 currentBot.playSong()
                 //player.play(getNextResource())
@@ -120,6 +148,12 @@ client.on('messageCreate', (message) => {
             return;
         }
         message.channel.bulkDelete(amount + 1)
+    }
+    else if(message.content.startsWith("!seek")) {
+        if(botMap.has(message.guild.id)){
+            console.log("seeking")
+            botMap.get(message.guild.id).seekSong(message)
+        }
     }
 
 })

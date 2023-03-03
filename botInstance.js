@@ -8,7 +8,14 @@ const { joinVoiceChannel,
 const play = require('play-dl')
 const {MessageEmbed} = require("discord.js");
 
+/*
+index.js -> initializare bot, listenerii pt comenzi
+botInstance.js -> Per server functionality
+MusicQueue.js class -> Music functionality
+AnimeSerach.js
 
+
+*/
 class botInstance {
 
     constructor() {
@@ -16,9 +23,11 @@ class botInstance {
         this.connection = null;
         this.channel = null;
         this.player = null;
+        // TODO: Add loop functionality
+        this.loop = false
+        this.currentResource = null;
 
         this.setPLayer();
-
     }
 
     setPLayer() {
@@ -39,8 +48,6 @@ class botInstance {
             }
         });
     }
-
-
 
     async addResource(rest) {
         let url;
@@ -134,7 +141,9 @@ class botInstance {
     }
 
     getNextResource() {
-        return this.queue.shift()
+        let currentResource = this.queue.shift()
+        this.currentResource = currentResource.metadata.url
+        return currentResource
     }
 
     playSong() {
@@ -203,6 +212,26 @@ class botInstance {
         channel.send({ embeds: [Error] });
     }
 
+    async seekSong(message) {
+        let seekTime = message.content.split(' ')[1]
+        console.log(parseInt(seekTime))
+
+        // Get the current resource being played by the AudioPlayer
+        const url = this.currentResource
+        try {
+            let stream = await play.stream(url, { seek : parseInt(seekTime) })
+            let shortResource = createAudioResource(stream.stream, {
+                inputType : stream.type,
+                metadata : {
+                    url : url,
+                }
+            })
+            this.player.stop()
+            this.player.play(shortResource)
+        } catch (err) {
+            message.reply("Seek value exceeds limits!")
+        }
+    }
 
     async execute(message) {
         let [first, ...rest] = message.content.split(' ')
@@ -232,8 +261,11 @@ class botInstance {
                 guildId: message.guild.id,
                 adapterCreator: message.guild.voiceAdapterCreator
             })
-
-
+            this.connection.on('stateChange', (old_state, new_state) => {
+                if (old_state.status === VoiceConnectionStatus.Ready && new_state.status === VoiceConnectionStatus.Connecting) {
+                    this.connection.configureNetworking();
+                }
+            })
 
             await entersState(this.connection, VoiceConnectionStatus.Ready, 30e3);
 
@@ -277,6 +309,8 @@ class botInstance {
 
     }
 }
+
+
 
 module.exports = {
     botInstance: botInstance
