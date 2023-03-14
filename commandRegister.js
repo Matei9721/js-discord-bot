@@ -19,8 +19,8 @@ const rest = new REST({ version: '9' }).setToken(token);
 
 module.exports = async function () {
     try {
-        const guildID = '400698493301424129'
-        const CLIENT_ID = '916452158814175293'
+        const guildID = process.env.GUILD_ID
+        const CLIENT_ID = process.env.CLIENT_ID
         console.log('Started refreshing application (/) commands.');
         await rest.put(
             Routes.applicationGuildCommands(CLIENT_ID, guildID),

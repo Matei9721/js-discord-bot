@@ -234,10 +234,7 @@ class botInstance {
     }
 
     async execute(message) {
-        let [first, ...rest] = message.content.split(' ')
-        rest = rest.join(' ')
-
-        rest = rest.split("&")[0];
+        rest = message.content.split(' ')[1].split("&")[0];
 
         this.channel = message.channel
         const voiceChannel = message.member.voice.channel;

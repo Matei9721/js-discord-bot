@@ -13,10 +13,10 @@ let bots = require('./botInstance')
 let botMap = new Map()
 
 
-const { Client, Intents, Collection} = require('discord.js');
+const { Client, GatewayIntentBits, Collection} = require('discord.js');
 const fs = require("fs");
 
-const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_VOICE_STATES] });
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildVoiceStates] });
 
 //Give map for playlists in client
 client.botMap = new Map();
@@ -28,13 +28,6 @@ for (const file of commandFiles) {
     const command = require(`./commands/${file}`);
     client.commands.set(command.data.name, command);
 }
-
-client.on('ready', () => {
-    console.log(`Logged in as ${client.user.tag}!`);
-    const guildID = '400698493301424129'
-    const guild = client.guilds.cache.get(guildID)
-    //console.log(client.guilds.cache)
-});
 
 client.on('voiceStateUpdate', (oldState, newState) => {
 
@@ -81,8 +74,6 @@ client.on('interactionCreate', async interaction => {
 });
 
 client.on('messageCreate', (message) => {
-    const guildID = '400698493301424129'
-
     if(message.content.startsWith("!play")){
         if(!botMap.has(message.guild.id)) {
             let bot = new bots.botInstance();
