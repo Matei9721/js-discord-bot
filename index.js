@@ -46,20 +46,20 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 
     // Disconnection
     if(oldState.channelId && !newState.channelId){
-        console.log('Disconnection Update');
-        // Bot was disconnected?
+        // console.log('Disconnection Update');
+        // // Bot was disconnected?
 
-        console.log(newState.guild.id)
-        if(botMap.has(newState.guild.id)) {
-            if (botMap.get(newState.guild.id).connection) {
-                command_list.leave(botMap.get(newState.guild.id).connection)
-            }
-            botMap.get(newState.guild.id).connection = null;
-            botMap.get(newState.guild.id).queue = [];
-            botMap.get(newState.guild.id).setPLayer();
-        }
+        // console.log(newState.guild.id)
+        // if(botMap.has(newState.guild.id)) {
+        //     if (botMap.get(newState.guild.id).connection) {
+        //         command_list.leave(botMap.get(newState.guild.id).connection)
+        //     }
+        //     botMap.get(newState.guild.id).connection = null;
+        //     botMap.get(newState.guild.id).queue = [];
+        //     botMap.get(newState.guild.id).setPLayer();
+        // }
 
-        if(newState.id === client.user.id) return console.log(`${client.user.username} was disconnected!`);
+        // if(newState.id === client.user.id) return console.log(`${client.user.username} was disconnected!`);
     }
 });
 
