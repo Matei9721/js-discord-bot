@@ -1,8 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-
-function sleep(s) {
-    return new Promise(resolve => setTimeout(resolve, s * 1000));
-}
+const sleep = require('../sleepFunc');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -15,11 +12,9 @@ module.exports = {
     async execute(interaction) {
         try {
             const seconds = interaction.options.getInteger("seconds")
-            console.log(seconds)
             // do something here
             await interaction.reply({ content: 'ZzZzZzZ...', ephemeral: true }); // indicate that the command is being processed
-            sleep(seconds).then(() => { interaction.deleteReply() });
-
+            sleep(seconds).then(() => { interaction.deleteReply() })
             // no need to send any response back to the user
         } catch (error) {
             console.error(error);

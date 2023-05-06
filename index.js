@@ -5,31 +5,24 @@ const dotenv = require('dotenv');
 dotenv.config();
 const token = process.env.BOT_TOKEN
 
-//Initialize slash commands
-const slash = require("./commandRegister")();
-
 play.authorization()
 let bots = require('./botInstance')
 let botMap = new Map()
 
-
-const { Client, GatewayIntentBits, Events, Collection} = require('discord.js');
-const fs = require("fs");
+const { Client, GatewayIntentBits, Events} = require('discord.js');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildVoiceStates, GatewayIntentBits.MessageContent] });
 
 //Give map for playlists in client
 client.botMap = new Map();
 
-//Give command info to the client variable
-client.commands = new Collection();
-const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
-for (const file of commandFiles) {
-    const command = require(`./commands/${file}`);
-    client.commands.set(command.data.name, command);
-}
+//Give command info to the client variable and intialize slash commands
+const func = require("./commandRegister");
+func().then(result => {
+    client.commands = result
+})
 
-client.on('voiceStateUpdate', (oldState, newState) => {
+client.on(Events.VoiceStateUpdate, (oldState, newState) => {
     //Checks and returns if the state change concerns the bot, otherwise continue
     if(newState.member.user.id != process.env.Client_ID) return console.log("Voice update does not concern me")
 
@@ -59,16 +52,11 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 client.on(Events.InteractionCreate, async interaction => {
     //Note: Webstorm might not see commandName, but when running it works
     if (!interaction.isCommand()) return;
-
     const command = client.commands.get(interaction.commandName);
-
-    if(!command) return;
-
     try {
         await command.execute(interaction, client);
-    } catch (e) {
-        console.log(e);
-        await interaction.reply("Check the console for errors!");
+    } catch (err) {
+        console.error(err);
     }
 });
 

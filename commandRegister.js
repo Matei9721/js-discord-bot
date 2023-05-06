@@ -7,12 +7,13 @@ dotenv.config();
 
 const token = process.env.BOT_TOKEN
 
-const commands = [];
+const commands = []
+const commandsRet = new Map();
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
-
 for (const file of commandFiles) {
     const command = require(`./commands/${file}`);
     commands.push(command.data.toJSON());
+    commandsRet.set(command.data.name, command);
 }
 
 const rest = new REST({ version: '9' }).setToken(token);
@@ -31,4 +32,5 @@ module.exports = async function () {
     } catch (error) {
         console.error(error);
     }
+    return commandsRet
 };
