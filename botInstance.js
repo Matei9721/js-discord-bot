@@ -6,7 +6,7 @@ const { joinVoiceChannel,
     NoSubscriberBehavior,
     VoiceConnectionStatus, } = require('@discordjs/voice');
 const play = require('play-dl')
-const {MessageEmbed} = require("discord.js");
+const {EmbedBuilder} = require("discord.js");
 
 /*
 index.js -> initializare bot, listenerii pt comenzi
@@ -98,8 +98,6 @@ class botInstance {
                 yt_info = await play.search(rest, { limit : 1 })
                 url = yt_info[0].url
             }
-
-            console.log(url)
             let stream = await play.stream(url)
             let resource = createAudioResource(stream.stream, {
                 inputType : stream.type,
@@ -126,10 +124,9 @@ class botInstance {
             fields.push(field)
         })
 
-        const Embed = new MessageEmbed()
+        const Embed = new EmbedBuilder()
             .setColor('#0099ff')
-            .setAuthor('Songs in queue:', 'https://images.emojiterra.com/twitter/v13.1/512px/1f972.png',
-            )
+            .setAuthor({name : 'Songs in queue:', iconURL: 'https://images.emojiterra.com/twitter/v13.1/512px/1f972.png'})
             .setDescription('There are ' + this.queue.length + ' more songs in the queue')
             .addFields(
                 fields
@@ -154,13 +151,13 @@ class botInstance {
         } else if (this.queue.length === 0) {
             description = 'Queue is empty'
         }
-
-        const Embed = new MessageEmbed()
+        console.log(resource.metadata.url)
+        const Embed = new EmbedBuilder()
             .setColor('#0099ff')
             .setTitle(resource.metadata.title)
             .setURL(resource.metadata.url)
-            .setAuthor('Now playing', 'https://images.emojiterra.com/twitter/v13.1/512px/1f972.png',
-                resource.metadata.url)
+            .setAuthor({name: 'Now playing', inconURL: 'https://images.emojiterra.com/twitter/v13.1/512px/1f972.png',
+                url: resource.metadata.url})
             .setDescription(description)
             .setThumbnail(resource.metadata.thumbnail)
             .addFields(
@@ -184,12 +181,12 @@ class botInstance {
 
         const resource = this.queue[this.queue.length-1]
 
-        const Embed = new MessageEmbed()
+        const Embed = new EmbedBuilder()
             .setColor('#0099ff')
             .setTitle(resource.metadata.title)
             .setURL(resource.metadata.url)
-            .setAuthor('Queued song', 'https://images.emojiterra.com/twitter/v13.1/512px/1f972.png',
-                resource.metadata.url)
+            .setAuthor({name: 'Queued song', iconURL: 'https://images.emojiterra.com/twitter/v13.1/512px/1f972.png',
+                url:resource.metadata.url})
             .setDescription('Remaining songs in queue until play: ' + String(this.queue.length - 1))
             .setThumbnail(resource.metadata.thumbnail)
             .addFields(
@@ -203,7 +200,7 @@ class botInstance {
     }
 
     errorMessage(channel) {
-        const Error = new MessageEmbed()
+        const Error = new EmbedBuilder()
             .setColor('#ff0000')
             .setTitle("Error while loading resource or playlist")
             .setDescription('Check the link of the resource or unavailable videos')
@@ -234,7 +231,14 @@ class botInstance {
     }
 
     async execute(message) {
-        const rest = message.content.split(' ')[1].split("&")[0];
+        //Remove the message command and split the rest into words
+        const arr = message.content.split(' ');
+        arr.shift()
+
+        //If the input is a url split on '&', otherwise join all the other words
+        var input
+        if(arr[0].includes("&")) input = arr[0].split("&")[0]
+        else input = arr.join(' ')
 
         this.channel = message.channel
         const voiceChannel = message.member.voice.channel;
@@ -268,10 +272,8 @@ class botInstance {
 
             this.connection.subscribe(this.player);
 
-
-            console.log("here")
             try{
-                await this.addResource(rest)
+                await this.addResource(input)
             } catch (err) {
                 console.log(err)
                 //this.errorMessage(this.channel)
@@ -291,7 +293,7 @@ class botInstance {
 
         } else {
             try {
-                await this.addToQueue(rest)
+                await this.addToQueue(input)
                 if (this.player.state.status === "idle") {
                     console.log("im idle")
 

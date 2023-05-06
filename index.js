@@ -30,6 +30,8 @@ for (const file of commandFiles) {
 }
 
 client.on('voiceStateUpdate', (oldState, newState) => {
+    //Checks and returns if the state change concerns the bot, otherwise continue
+    if(newState.member.user.id != process.env.Client_ID) return console.log("Voice update does not concern me")
 
     // Represents a mute/deafen update
     if(oldState.channelId === newState.channelId) return console.log('Mute/Deafen Update');
@@ -39,10 +41,7 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 
     // Disconnection
     if(oldState.channelId && !newState.channelId){
-        console.log('Disconnection Update');
         // Bot was disconnected?
-
-        console.log(newState.guild.id)
         if(botMap.has(newState.guild.id)) {
             if (botMap.get(newState.guild.id).connection) {
                 command_list.leave(botMap.get(newState.guild.id).connection)
@@ -52,7 +51,7 @@ client.on('voiceStateUpdate', (oldState, newState) => {
             botMap.get(newState.guild.id).setPLayer();
         }
 
-        if(newState.id === client.user.id) return console.log(`${client.user.username} was disconnected!`);
+        if(newState.id === client.user.id) return console.log(`${client.user.username} was disconnected from "${newState.guild.name}" server!`);
     }
 });
 
@@ -74,7 +73,7 @@ client.on(Events.InteractionCreate, async interaction => {
 });
 
 client.on(Events.MessageCreate, async message => {
-    console.log("I got the message " + message)
+    console.log("I got the message " + message.content)
     if(message.content.startsWith("!play")){
         if(!botMap.has(message.guild.id)) {
             let bot = new bots.botInstance();
@@ -85,7 +84,6 @@ client.on(Events.MessageCreate, async message => {
         } catch (err) {
             console.log("Error")
         }
-
 
     } else if(message.content.startsWith("bot get him")) {
         message.channel.send("you fell off + ratio + who asked + no u + deez nuts + radio + don't care + didn't ask +" +
