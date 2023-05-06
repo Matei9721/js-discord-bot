@@ -13,10 +13,10 @@ let bots = require('./botInstance')
 let botMap = new Map()
 
 
-const { Client, GatewayIntentBits, Collection} = require('discord.js');
+const { Client, GatewayIntentBits, Events, Collection} = require('discord.js');
 const fs = require("fs");
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildVoiceStates] });
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildVoiceStates, GatewayIntentBits.MessageContent] });
 
 //Give map for playlists in client
 client.botMap = new Map();
@@ -57,7 +57,7 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 });
 
 //Main interaction logic for slash commands
-client.on('interactionCreate', async interaction => {
+client.on(Events.InteractionCreate, async interaction => {
     //Note: Webstorm might not see commandName, but when running it works
     if (!interaction.isCommand()) return;
 
@@ -73,7 +73,8 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-client.on('messageCreate', (message) => {
+client.on(Events.MessageCreate, async message => {
+    console.log("I got the message " + message)
     if(message.content.startsWith("!play")){
         if(!botMap.has(message.guild.id)) {
             let bot = new bots.botInstance();
