@@ -18,6 +18,10 @@ for (const file of commandFiles) {
 
 const rest = new REST({ version: '9' }).setToken(token);
 
+/**
+ * Registers all slash commands to the server
+ * @returns {Array} List of slash commands
+ */
 module.exports = async function () {
     try {
         const guildID = process.env.GUILD_ID

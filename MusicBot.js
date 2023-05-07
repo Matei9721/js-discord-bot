@@ -20,6 +20,9 @@ module.exports = class musicBot {
         this.setPLayer();
     }
 
+    /**
+     * Creates the player and sets up listener to play the next song when idle
+     */
     setPLayer() {
         this.player = createAudioPlayer({
             behaviors: {
@@ -31,6 +34,10 @@ module.exports = class musicBot {
         });
     }
 
+    /**
+     * Adds the song/playlist to the queue
+     * @param {String} rest URL/Song name to be added to the queue
+     */
     async addResource(rest) {
         //Handle playlists
         if(rest.includes("playlist")) {
@@ -79,12 +86,19 @@ module.exports = class musicBot {
         }
     }
 
+    /**
+     * Gets the next song from the queue and returns it
+     * @returns {*} Current song which should be playing
+     */
     getNextResource() {
         let currentResource = this.queue.pop()
         this.currentResource = currentResource.metadata.url
         return currentResource
     }
 
+    /**
+     * Plays the next song in the queue
+     */
     playSong() {
         const resource = this.getNextResource()
 
@@ -110,6 +124,11 @@ module.exports = class musicBot {
         this.player.play(resource)
     }
 
+    /**
+     * Adds the song to queue if there is another song playing
+     * @param {String} rest Song URL/title to be added to the queue
+     * @returns Stops early only if there is no song currently playing
+     */
     async addToQueue(rest) {
         await this.addResource(rest)
         
@@ -133,6 +152,10 @@ module.exports = class musicBot {
         this.messageChannel.send({ embeds: [Embed] });
     }
 
+    /**
+     * Displays the error message for invalid resource/input
+     * @param {*} channel Channel in which to display the message
+     */
     errorMessage(channel) {
         const Error = new EmbedBuilder()
             .setColor('#ff0000')
@@ -142,6 +165,10 @@ module.exports = class musicBot {
         channel.send({ embeds: [Error] });
     }
 
+    /**
+     * Connects bot to given voice channel
+     * @param {*} voiceChannel Voice channel which the bot connects to
+     */
     async createConnection(voiceChannel) {
         if (!voiceChannel) this.messageChannel.send("I am an idiot bot and I don't know what to do if you are not in a voice room")
 
@@ -167,6 +194,12 @@ module.exports = class musicBot {
         }
     }
 
+    /**
+     * Play command logic which will end up playing/adding to the queue a song/playlist
+     * @param {*} messageChannel Message channel which the command was sent from
+     * @param {*} voiceChannel Voice channel which the bot will connect to
+     * @param {*} input Song URL/title which needs to be played
+     */
     async play(messageChannel, voiceChannel, input) {
         //Ensure that we send messages to the text channel where the bot was last used for music
         this.messageChannel = messageChannel
@@ -196,19 +229,32 @@ module.exports = class musicBot {
         }
     }
 
+    /**
+     * Pauses the player
+     */
     pause() {
         this.player.pause()
     }
 
+    /**
+     * Resumes the player
+     */
     resume() {
         this.player.unpause()
     }
 
+    /**
+     * Skips the current song
+     */
     skip() {
         if(this.queue.isEmpty()) this.player.stop()
         else this.playSong()
     }
 
+    /**
+     * Plays from given second into the song
+     * @param {Num} seekTime The second which the player will skip to
+     */
     async seek(seekTime) {
         // Get the current resource being played by the AudioPlayer
         try {
@@ -224,6 +270,9 @@ module.exports = class musicBot {
         } catch (err) {console.log(err)}
     }
 
+    /**
+     * Displays the current queue of songs
+     */
     getQueue() {
         let fields = this.queue.getQueue()
         const Embed = new EmbedBuilder()
