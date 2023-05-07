@@ -23,7 +23,7 @@ commandRegister().then(result => {
 //Main logic for detecting changes in voice channel
 client.on(Events.VoiceStateUpdate, (oldState, newState) => {
     //Checks and returns if the state change concerns the bot, otherwise continue
-    if(newState.member.user.id != process.env.Client_ID) return console.log("Voice update does not concern me")
+    if(newState.member.user.id !== process.env.Client_ID) return console.log("Voice update does not concern me")
 
     // Represents a mute/deafen update
     if(oldState.channelId === newState.channelId) return console.log('Mute/Deafen Update');
