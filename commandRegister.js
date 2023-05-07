@@ -24,11 +24,14 @@ const rest = new REST({ version: '9' }).setToken(token);
  */
 module.exports = async function () {
     try {
-        const guildID = process.env.GUILD_ID
+        //Note: uncomment this in if you want to register commands only to a specific server
+        //const guildID = process.env.GUILD_ID
         const clientID = process.env.CLIENT_ID
         console.log('Started refreshing application (/) commands.');
         await rest.put(
-            Routes.applicationGuildCommands(clientID, guildID),
+            //This version is for testing, by adding the commands only to a given guild
+            //Routes.applicationGuildCommands(clientID, guildID),
+            Routes.applicationCommands(clientID),
             { body: commands },
         );
 
