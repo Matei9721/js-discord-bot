@@ -6,7 +6,7 @@ const { joinVoiceChannel,
     NoSubscriberBehavior,
     VoiceConnectionStatus, } = require('@discordjs/voice');
 const play = require('play-dl')
-const {EmbedBuilder} = require("discord.js");
+const {EmbedBuilder, PermissionsBitField} = require("discord.js");
 const musicQueue = require('./musicQueue');
 
 module.exports = class musicBot {
@@ -43,7 +43,8 @@ module.exports = class musicBot {
         if(rest.includes("playlist")) {
             let first_song = true
             let songs_info = await play.playlist_info(rest, {incomplete : true})
-            for(let song in songs_info) {
+            let videos = await songs_info.all_videos()
+            for (const song of videos) {
                 //Get the song resource
                 let stream = await play.stream(song.url)
                 let resource = createAudioResource(stream.stream, {
@@ -101,7 +102,8 @@ module.exports = class musicBot {
      */
     playSong() {
         const resource = this.getNextResource()
-
+        console.log("Here in playsong")
+        console.log(resource.metadata)
         //See if the there are any other songs queued
         let description;
         if (!this.queue.isEmpty()) description = 'Next song in queue is ' + this.queue.peek().metadata.title
@@ -174,7 +176,7 @@ module.exports = class musicBot {
 
         //Check if the bot has the minimum permissions
         const permissions = voiceChannel.permissionsFor(this.messageChannel.client.user);
-        if (!permissions.has("CONNECT") || !permissions.has("SPEAK")) 
+        if (!permissions.has(PermissionsBitField.Flags.Connect) || !permissions.has(PermissionsBitField.Flags.Speak))
             this.messageChannel.send("I need the permissions to join and speak in your voice channel!")
 
         if(!this.connection) {
@@ -185,7 +187,8 @@ module.exports = class musicBot {
                 adapterCreator: this.messageChannel.guild.voiceAdapterCreator
             })
             this.connection.on('stateChange', (old_state, new_state) => {
-                if (old_state.status === VoiceConnectionStatus.Ready && new_state.status === VoiceConnectionStatus.Connecting) {
+                if (old_state.status === VoiceConnectionStatus.Ready &&
+                    new_state.status === VoiceConnectionStatus.Connecting) {
                     this.connection.configureNetworking();
                 }
             })
