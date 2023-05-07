@@ -102,3 +102,9 @@ dist
 
 # TernJS port file
 .tern-port
+
+#Youtube cookies
+youtube.data
+
+# VsCode configuration files
+.vscode

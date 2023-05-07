@@ -12,19 +12,20 @@ This bot is using the Discord.js wrapper for the Discord API. It's main function
 - Skip the current song: **!skip**
 - Pause the current song: **!pause**
 - Resume the current song: **!resume**
+- Seek into a song: **!seek**
 
 ## Bot installation
 
-To run the bot all you have to do is clone the repository and in the main directori create an .env file containing your BOT_TOKEN. Then run the ussual *npm install* and *npm start* and everything should be up and running.
+To run the bot all you have to do is clone the repository and in the main directori create an .env file containing your BOT_TOKEN, GUILD_ID and CLIENT_ID (last two are used for slash commands). Then run the ussual *npm install* and *npm start* and everything should be up and running.
 
 ## Notes
 
-- Currently, slash commands are not fully implemented. When and if they are implemented, they will also be made global such that you don't have to make requests to the discord API for each new guild.
+- Slash commands are for now global, for testing purposes uncomment and replace the lines in commandRegister.js, guild commands are generally better for testing as changes take place instantly, global commands modifications might take a while before showing up
 - There is no database support yet, but in the future I do plan to add MySQL support for extra features.
+
 
 ## (Hopefully) Upcoming updates:
 
-- Code refactoring and implementation of slash commands.
 - Better error handling
 - Anime notification functionality - The bot will send notifications to a certain guild room whenever a new episode from a favourite anime has aired.
 

@@ -5,15 +5,11 @@ module.exports = {
         .setName('leave')
         .setDescription('Make the bot leave from the voice channel'),
     async execute(interaction, client) {
-        if(client.botMap.has(interaction.guild.id)) {
-            let connection = client.botMap.get(interaction.guild.id).connection
-            connection.destroy();
-            connection = null;
-            client.botMap.get(interaction.guild.id).connection = null;
-            client.botMap.get(interaction.guild.id).queue = [];
-            client.botMap.get(interaction.guild.id).setPlayer();
+        //Indicate that the command is being processed
+        interaction.reply({ content: 'Leaving the voice channel..'}); 
+        
+        if(client.botMap.has(interaction.channel.guild.id)) {
+            client.botMap.get(interaction.channel.guild.id).leaveMusic()
         }
-        interaction.reply("Gusi?");
-        interaction.deleteReply();
     },
 };

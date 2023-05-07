@@ -1,7 +1,6 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-
-// <:weeb:814805991002210315>
-let bots = require('../botInstanceSlash')
+const botModel = require('../botModel');
+const sleepFunc = require('./sleep_function/sleepFunc');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -14,16 +13,23 @@ module.exports = {
 
 
     async execute(interaction, client) {
+        //Indicate that the command is being processed
+        interaction.reply({ content: 'Loading the song(s) for you..', ephemeral: true }); 
+        sleepFunc(5).then(() => { interaction.deleteReply() })
+        
+        //If there is no player in the map, then add a new one
         if(!client.botMap.has(interaction.guild.id)) {
-            let bot = new bots.botInstanceSlash();
-            client.botMap.set(interaction.guild.id, bot);
+            client.botMap.set(interaction.guild.id, new botModel())
         }
+           
         try {
-            await client.botMap.get(interaction.guild.id).executeSong(interaction);
+            const input = interaction.options.get("song").value
+            const bot = client.botMap.get(interaction.guild.id)
+            const voiceChannel = interaction.member.voice.channel
+            await bot.musicBot.play(interaction.channel, voiceChannel, input);
         } catch (err) {
-            console.log(err)
+            console.error(err)
         }
-        interaction.reply("Gusi?");
-        interaction.deleteReply();
+
     },
 };

@@ -7,23 +7,31 @@ dotenv.config();
 
 const token = process.env.BOT_TOKEN
 
-const commands = [];
+const commands = []
+const commandsRet = new Map();
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
-
 for (const file of commandFiles) {
     const command = require(`./commands/${file}`);
     commands.push(command.data.toJSON());
+    commandsRet.set(command.data.name, command);
 }
 
 const rest = new REST({ version: '9' }).setToken(token);
 
+/**
+ * Registers all slash commands to the server
+ * @returns {Array} List of slash commands
+ */
 module.exports = async function () {
     try {
-        const guildID = '400698493301424129'
-        const CLIENT_ID = '916452158814175293'
+        //Note: uncomment this in if you want to register commands only to a specific server
+        //const guildID = process.env.GUILD_ID
+        const clientID = process.env.CLIENT_ID
         console.log('Started refreshing application (/) commands.');
         await rest.put(
-            Routes.applicationGuildCommands(CLIENT_ID, guildID),
+            //This version is for testing, by adding the commands only to a given guild
+            //Routes.applicationGuildCommands(clientID, guildID),
+            Routes.applicationCommands(clientID),
             { body: commands },
         );
 
@@ -31,4 +39,5 @@ module.exports = async function () {
     } catch (error) {
         console.error(error);
     }
+    return commandsRet
 };
