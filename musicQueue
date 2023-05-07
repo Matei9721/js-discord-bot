@@ -1,0 +1,41 @@
+module.exports = class musicQueue {
+    constructor() {
+        this.queue = [];
+    }
+
+    getQueue() {
+        let result = []
+        this.queue.forEach(song => {
+            result.push({name: song.metadata.title, value: song.metadata.url})
+        })
+        return result
+    }
+
+    pop() {
+        return this.queue.shift()
+    }
+
+    enqueue(entry) {
+        this.queue.push(entry)
+    }
+
+    getSize() {
+        return this.queue.length
+    }
+
+    peek() {
+        if(!this.isEmpty) return this.queue[0]
+    }
+
+    getLast() {
+        return this.queue[this.getSize()-1]
+    }
+
+    isEmpty() {
+        return !this.queue.length
+    }
+
+    removeAt(index) {
+        this.queue.splice(index, 1)
+    }
+}
