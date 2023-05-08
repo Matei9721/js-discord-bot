@@ -102,8 +102,6 @@ module.exports = class musicBot {
      */
     playSong() {
         const resource = this.getNextResource()
-        console.log("Here in playsong")
-        console.log(resource.metadata)
         //See if the there are any other songs queued
         let description;
         if (!this.queue.isEmpty()) description = 'Next song in queue is ' + this.queue.peek().metadata.title
@@ -115,8 +113,7 @@ module.exports = class musicBot {
             .setColor('#0099ff')
             .setTitle(resource.metadata.title)
             .setURL(resource.metadata.url)
-            .setAuthor({name: 'Now playing', inconURL: 'https://images.emojiterra.com/twitter/v13.1/512px/1f972.png',
-                url: resource.metadata.url})
+            .setAuthor({name: 'Now playing', url: resource.metadata.url})
             .setDescription(description)
             .setThumbnail(resource.metadata.thumbnail)
             .addFields({name: 'Song duration', value: resource.metadata.duration})
@@ -137,21 +134,31 @@ module.exports = class musicBot {
         //Base case: If the player is idle add the song to the queue and play it
         if(this.player.state.status === "idle") return
 
-        //Confirm with a message that the song was added to the queue
-        const song = this.queue.getLast()
-        const Embed = new EmbedBuilder()
+        //Different messages for adding a playlist or a song
+        if(rest.includes("playlist")) {
+            const Embed = new EmbedBuilder()
+            .setColor('#0099ff')
+            .setAuthor({name: 'Queued all songs from the playlist', url:rest})
+            .setDescription('Current size of the queue: ' + String(this.queue.getSize()))
+            .setTimestamp()
+            this.messageChannel.send({ embeds: [Embed] });
+        }
+        else {
+            //Confirm with a message that the song was added to the queue
+            const song = this.queue.getLast()
+            const Embed = new EmbedBuilder()
             .setColor('#0099ff')
             .setTitle(song.metadata.title)
             .setURL(song.metadata.url)
-            .setAuthor({name: 'Queued song', iconURL: 'https://images.emojiterra.com/twitter/v13.1/512px/1f972.png',
-                url:song.metadata.url})
+            .setAuthor({name: 'Queued song', url:song.metadata.url})
             .setDescription('Remaining songs in queue until play: ' + String(this.queue.getSize()))
             .setThumbnail(song.metadata.thumbnail)
             .addFields(
                 { name: 'Song duration', value: song.metadata.duration },
             )
             .setTimestamp()
-        this.messageChannel.send({ embeds: [Embed] });
+            this.messageChannel.send({ embeds: [Embed] });
+        }
     }
 
     /**
@@ -280,7 +287,7 @@ module.exports = class musicBot {
         let fields = this.queue.getQueue()
         const Embed = new EmbedBuilder()
             .setColor('#0099ff')
-            .setAuthor({name : 'Songs in queue:', iconURL: 'https://images.emojiterra.com/twitter/v13.1/512px/1f972.png'})
+            .setAuthor({name : 'Songs in queue:'})
             .setDescription('There are ' + this.queue.getSize() + ' more songs in the queue')
             .addFields(fields)
             .setTimestamp()

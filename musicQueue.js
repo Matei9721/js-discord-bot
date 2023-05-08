@@ -44,7 +44,7 @@ module.exports = class musicQueue {
      * @returns {*} Song from the array
      */
     peek() {
-        if (!this.isEmpty) return this.queue[0]
+        if (!this.queue.isEmpty) return this.queue[0]
     }
 
     /**
