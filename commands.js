@@ -1,9 +1,11 @@
 const botModel = require("./botModel");
+const logger = require('./logging');
 
 function play(client, message) {
   //If we receive !play make sure we have a bot initialized
   if(!client.botMap.has(message.guild.id)) {
     client.botMap.set(message.guild.id, new botModel())
+    logger.info("Created new instance for Guild " + message.guild.name)
   }
   try{
     let input = message.content.split(' ');input.shift(); input = input.join(' ')

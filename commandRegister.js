@@ -1,6 +1,8 @@
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
 const fs = require('fs');
+const logger = require('./logging');
+
 // Initialize env file for BOT TOKEN
 const dotenv = require('dotenv');
 dotenv.config();
@@ -27,7 +29,7 @@ module.exports = async function () {
         //Note: uncomment this in if you want to register commands only to a specific server
         //const guildID = process.env.GUILD_ID
         const clientID = process.env.CLIENT_ID
-        console.log('Started refreshing application (/) commands.');
+        logger.info('Started refreshing application (/) commands.');
         await rest.put(
             //This version is for testing, by adding the commands only to a given guild
             //Routes.applicationGuildCommands(clientID, guildID),
@@ -35,9 +37,9 @@ module.exports = async function () {
             { body: commands },
         );
 
-        console.log('Successfully reloaded application (/) commands.');
+        logger.info('Successfully reloaded application (/) commands.');
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
     return commandsRet
 };
