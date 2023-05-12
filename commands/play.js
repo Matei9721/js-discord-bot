@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const botModel = require('../botModel');
 const sleepFunc = require('./sleep_function/sleepFunc');
+const logger = require('../logging');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -20,6 +21,7 @@ module.exports = {
         //If there is no player in the map, then add a new one
         if(!client.botMap.has(interaction.guild.id)) {
             client.botMap.set(interaction.guild.id, new botModel())
+            logger.info("Created new instance for Guild " + interaction.guild.name)
         }
            
         try {

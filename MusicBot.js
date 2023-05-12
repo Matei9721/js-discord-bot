@@ -263,7 +263,7 @@ module.exports = class musicBot {
 
     /**
      * Plays from given second into the song
-     * @param {Num} seekTime The second which the player will skip to
+     * @param {number} seekTime The second which the player will skip to
      */
     async seek(seekTime) {
         // Get the current resource being played by the AudioPlayer
