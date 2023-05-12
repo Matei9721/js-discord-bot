@@ -8,6 +8,7 @@ const { joinVoiceChannel,
 const play = require('play-dl')
 const {EmbedBuilder, PermissionsBitField} = require("discord.js");
 const musicQueue = require('./musicQueue');
+const logger = require('./logging');
 
 module.exports = class musicBot {
     constructor() {
@@ -69,7 +70,7 @@ module.exports = class musicBot {
                     first_song = false
                 }
             }
-            console.log("Finished loading all songs from received playlist")
+            logger.debug("Finished loading all songs from received playlist")
         } else{
             //Get the song and add it to the queue
             let song = (await play.search(rest, {limit : 1}))[0]
@@ -106,7 +107,6 @@ module.exports = class musicBot {
         let description;
         if (!this.queue.isEmpty()) description = 'Next song in queue is ' + this.queue.peek().metadata.title
         else description = 'Queue is empty'
-        console.log(resource.metadata.url)
         
         //Send the play message and play the song
         const Embed = new EmbedBuilder()
@@ -223,10 +223,10 @@ module.exports = class musicBot {
         
         //Try to add the song
         try{
-            console.log(input)
+            logger.debug(input)
             await this.addToQueue(input)
         } catch (err) {
-            console.log(err)
+            logger.error(err)
         }
         //If the bot is currently idle, play the song
         if (this.player.state.status === "idle") {
@@ -277,7 +277,7 @@ module.exports = class musicBot {
             })
             this.player.stop()
             this.player.play(shortResource)
-        } catch (err) {console.log(err)}
+        } catch (err) {logger.error(err)}
     }
 
     /**
