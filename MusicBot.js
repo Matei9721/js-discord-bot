@@ -297,4 +297,21 @@ module.exports = class musicBot {
         this.messageChannel.send({ embeds: [Embed] });
     }
 
+    clearQueue() {
+        this.queue = new musicQueue
+    }
+
+    removeSongAt(position, messageChannel) {
+        const index = position - 1
+        if(index < 0 || position > this.queue.getSize()) {
+            const Error = new EmbedBuilder()
+                .setColor('#ff0000')
+                .setTitle("Invalid Input")
+                .setDescription('Your input was larger/smaller than the size of the queue!')
+                .setTimestamp()
+            messageChannel.send({ embeds: [Error] });
+        }
+        else this.queue.removeAt(index)
+    }
+
 }
