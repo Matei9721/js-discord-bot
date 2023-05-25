@@ -49,7 +49,7 @@ function queue(client, message) {
   }
 }
 
-function unenqueue(client, message) {
+function dequeue(client, message) {
   //Get input and check if it is a number and parse it
   let [first, ...rest] = message.content.split(' ')
   rest = rest.join(' ')
@@ -116,5 +116,5 @@ module.exports = {
   clean: clean,
   botGetHim: botGetHim,
   clearQueue: clearQueue,
-  unenqueue: unenqueue,
+  dequeue: dequeue,
 };

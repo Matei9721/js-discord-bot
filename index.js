@@ -77,8 +77,8 @@ client.on(Events.MessageCreate, async message => {
         command_list.clean(client, message)
     } else if(message.content.startsWith("!seek")) {
         command_list.seek(client, message)
-    } else if(message.content.startsWith("!unenqueue")) {
-        command_list.unenqueue(client, message)
+    } else if(message.content.startsWith("!dequeue")) {
+        command_list.dequeue(client, message)
     } else if(message.content.startsWith("!clearqueue")) {
         command_list.clearQueue(client, message)
     }

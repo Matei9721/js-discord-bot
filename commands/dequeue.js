@@ -3,7 +3,7 @@ const sleepFunc = require('./sleep_function/sleepFunc');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('unenqueue')
+        .setName('dequeue')
         .setDescription('Removes a specific song from the queue')
         .addIntegerOption((option) => option
             .setName('position')
