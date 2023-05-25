@@ -24,7 +24,7 @@ commandRegister().then(result => {
 // Main logic for detecting changes in voice channel
 client.on(Events.VoiceStateUpdate, (oldState, newState) => {
     //Checks and returns if the state change concerns the bot, otherwise continue
-    if(newState.member.user.id !== process.env.Client_ID) return logger.debug("Voice update does not concern me")
+    if(newState.member.user.id !== process.env.Client_ID) return
 
     // Represents a mute/deafen update
     if(oldState.channelId === newState.channelId) return logger.debug('Mute/Deafen Update');
@@ -77,6 +77,10 @@ client.on(Events.MessageCreate, async message => {
         command_list.clean(client, message)
     } else if(message.content.startsWith("!seek")) {
         command_list.seek(client, message)
+    } else if(message.content.startsWith("!dequeue")) {
+        command_list.dequeue(client, message)
+    } else if(message.content.startsWith("!clearqueue")) {
+        command_list.clearQueue(client, message)
     }
 })
 

@@ -9,8 +9,8 @@ module.exports = class musicQueue {
      */
     getQueue() {
         let result = []
-        this.queue.forEach(song => {
-            result.push({ name: song.metadata.title, value: song.metadata.url })
+        this.queue.forEach((song, index) => {
+            result.push({ name: (index + 1) + ". " + song.metadata.title, value: song.metadata.url })
         })
         return result
     }

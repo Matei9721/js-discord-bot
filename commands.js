@@ -1,6 +1,8 @@
 const botModel = require("./botModel");
 const logger = require('./logging');
 
+//MusicBot Commands
+
 function play(client, message) {
   //If we receive !play make sure we have a bot initialized
   if(!client.botMap.has(message.guild.id)) {
@@ -47,22 +49,50 @@ function queue(client, message) {
   }
 }
 
+function dequeue(client, message) {
+  //Get input and check if it is a number and parse it
+  let [first, ...rest] = message.content.split(' ')
+  rest = rest.join(' ')
+  if(isNaN(rest)) {
+    message.channel.send("Your input is not a number!")
+    return
+  }
+  const position = parseInt(rest,10)
+
+  if(client.botMap.has(message.guild.id)) {
+    client.botMap.get(message.guild.id).musicBot.removeSongAt(position, message.channel)
+  }
+}
+
+function clearQueue(client, message) {
+  if(client.botMap.has(message.guild.id)) {
+    client.botMap.get(message.guild.id).musicBot.clearQueue()
+  }
+}
+
 function leave(client, message) {
   if(client.botMap.has(message.guild.id)) {
     client.botMap.get(message.guild.id).leaveMusic()
   }
 }
 
-function clean(client, message) {
-  let [first, ...rest] = message.content.split(' ')
-        rest = rest.join(' ')
+//Other commands
 
-        const amount = parseInt(rest,10)
-        if(amount >= 100) {
-            message.reply("Maximum input value is 99")
-            return;
-        }
-        message.channel.bulkDelete(amount + 1)
+function clean(client, message) {
+  //Get input and check if it is a number and parse it
+  let [first, ...rest] = message.content.split(' ')
+  rest = rest.join(' ')
+  if(isNaN(rest)) {
+    message.channel.send("Your input is not a number!")
+    return
+  }
+  const amount = parseInt(rest,10)
+  
+  if(amount >= 100) {
+      message.reply("Maximum input value is 99")
+      return;
+  }
+  message.channel.bulkDelete(amount + 1)
 }
 
 function botGetHim(client, message) {
@@ -85,4 +115,6 @@ module.exports = {
   leave: leave,
   clean: clean,
   botGetHim: botGetHim,
+  clearQueue: clearQueue,
+  dequeue: dequeue,
 };

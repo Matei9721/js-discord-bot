@@ -74,6 +74,7 @@ module.exports = class musicBot {
         } else{
             //Get the song and add it to the queue
             let song = (await play.search(rest, {limit : 1}))[0]
+            if (!song) throw "The song does not exist!"
             let stream = await play.stream(song.url)
             let resource = createAudioResource(stream.stream, {
                 inputType : stream.type,
@@ -168,8 +169,8 @@ module.exports = class musicBot {
     errorMessage(channel) {
         const Error = new EmbedBuilder()
             .setColor('#ff0000')
-            .setTitle("Error while loading resource or playlist")
-            .setDescription('Check the link of the resource or unavailable videos')
+            .setTitle("Error while loading song or playlist")
+            .setDescription('Check the link or name of the song, it might not exist!')
             .setTimestamp()
         channel.send({ embeds: [Error] });
     }
@@ -225,18 +226,20 @@ module.exports = class musicBot {
         try{
             logger.debug(input)
             await this.addToQueue(input)
+            //If the bot is currently idle, play the song
+            if (this.player.state.status === "idle") {
+                try {
+                    this.playSong()
+                } catch (err) {
+                    this.errorMessage(this.messageChannel)
+                    throw new Error(err)
+                }
+            }
         } catch (err) {
+            this.errorMessage(this.messageChannel)
             logger.error(err)
         }
-        //If the bot is currently idle, play the song
-        if (this.player.state.status === "idle") {
-            try {
-                this.playSong()
-            } catch (err) {
-                this.errorMessage(this.messageChannel)
-                throw new Error(err)
-            }
-        }
+        
     }
 
     /**
@@ -292,6 +295,23 @@ module.exports = class musicBot {
             .addFields(fields)
             .setTimestamp()
         this.messageChannel.send({ embeds: [Embed] });
+    }
+
+    clearQueue() {
+        this.queue = new musicQueue
+    }
+
+    removeSongAt(position, messageChannel) {
+        const index = position - 1
+        if(index < 0 || position > this.queue.getSize()) {
+            const Error = new EmbedBuilder()
+                .setColor('#ff0000')
+                .setTitle("Invalid Input")
+                .setDescription('Your input was larger/smaller than the size of the queue!')
+                .setTimestamp()
+            messageChannel.send({ embeds: [Error] });
+        }
+        else this.queue.removeAt(index)
     }
 
 }
