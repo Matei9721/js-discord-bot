@@ -29,6 +29,18 @@ function skip(client, message) {
   }
 }
 
+function loop(client, message) {
+  if(client.botMap.has(message.guild.id)) {
+    client.botMap.get(message.guild.id).musicBot.startLoop()
+  }
+}
+
+function stopLoop(client, message) {
+  if(client.botMap.has(message.guild.id)) {
+    client.botMap.get(message.guild.id).musicBot.stopLoop()
+  }
+}
+
 function resume(client, message) {
   if(client.botMap.has(message.guild.id)){
     client.botMap.get(message.guild.id).musicBot.resume()
@@ -117,4 +129,6 @@ module.exports = {
   botGetHim: botGetHim,
   clearQueue: clearQueue,
   dequeue: dequeue,
+  loop: loop,
+  stopLoop: stopLoop,
 };
