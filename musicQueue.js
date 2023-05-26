@@ -70,4 +70,13 @@ module.exports = class musicQueue {
     removeAt(index) {
         this.queue.splice(index, 1)
     }
+
+    /**
+     * Adds element to the head of the queue
+     * @param entry Song to be added
+     */
+    addFirst(entry) {
+        this.queue.unshift(entry)
+    }
+
 }

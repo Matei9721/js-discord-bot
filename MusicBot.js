@@ -30,8 +30,12 @@ module.exports = class musicBot {
                 noSubscriber: NoSubscriberBehavior.Play
             }
         })
-        this.player.on(AudioPlayerStatus.Idle, interaction => {
+        this.player.on(AudioPlayerStatus.Idle, async interaction => {
             if(!this.queue.isEmpty()) this.playSong()
+            if(this.loop && this.currentResource) {
+                const resource = await this.reloadSong(0)
+                this.queue.addFirst(resource)
+            }
         });
     }
 
@@ -47,19 +51,9 @@ module.exports = class musicBot {
             let videos = await songs_info.all_videos()
             for (const song of videos) {
                 //Get the song resource
-                let stream = await play.stream(song.url)
-                let resource = createAudioResource(stream.stream, {
-                    inputType : stream.type,
-                    metadata : {
-                        url : song.url,
-                        title : song.title,
-                        duration : song.durationRaw,
-                        thumbnail : song.thumbnails[0].url
-                    }
-                })
+                const resource = await this.loadSong(song)
                 //Push the song in the queue
                 this.queue.enqueue(resource)
-
                 //If the bot is currently idle, play a song while loading the rest of the playlist
                 if (first_song && this.player.state.status === "idle") {
                     try {
@@ -75,35 +69,54 @@ module.exports = class musicBot {
             //Get the song and add it to the queue
             let song = (await play.search(rest, {limit : 1}))[0]
             if (!song) throw "The song does not exist!"
-            let stream = await play.stream(song.url)
-            let resource = createAudioResource(stream.stream, {
-                inputType : stream.type,
-                metadata : {
-                    url : song.url,
-                    title : song.title,
-                    duration : song.durationRaw,
-                    thumbnail : song.thumbnails[0].url
-                }
-            })
+            const resource = await this.loadSong(song)
             this.queue.enqueue(resource)
         }
     }
 
     /**
-     * Gets the next song from the queue and returns it
-     * @returns {*} Current song which should be playing
+     * Loads the resource
+     * @param {Object} song Song which will be loaded
+     * @returns Loaded resource
      */
-    getNextResource() {
-        let currentResource = this.queue.pop()
-        this.currentResource = currentResource.metadata.url
-        return currentResource
+    async loadSong(song) {
+        const stream = await play.stream(song.url)
+        const resource = createAudioResource(stream.stream, {
+            inputType : stream.type,
+            metadata : {
+                url : song.url,
+                title : song.title,
+                duration : song.durationRaw,
+                thumbnail : song.thumbnails[0].url
+            }
+        })
+        return resource
+    }
+
+    /**
+     * Reloads the resource at given seek time
+     * @param {number} seekTime 
+     * @returns Loaded resource
+     */
+    async reloadSong(seekTime) {
+        const stream = await play.stream(this.currentResource.metadata.url, { seek : parseInt(seekTime) })
+        const shortResource = createAudioResource(stream.stream, {
+            inputType : stream.type,
+            metadata : {
+                url : this.currentResource.metadata.url,
+                title : this.currentResource.metadata.title,
+                duration : this.currentResource.metadata.duration,
+                thumbnail : this.currentResource.metadata.thumbnail
+            }
+        })
+        return shortResource
     }
 
     /**
      * Plays the next song in the queue
      */
     playSong() {
-        const resource = this.getNextResource()
+        this.currentResource = this.queue.pop()
         //See if the there are any other songs queued
         let description;
         if (!this.queue.isEmpty()) description = 'Next song in queue is ' + this.queue.peek().metadata.title
@@ -112,16 +125,16 @@ module.exports = class musicBot {
         //Send the play message and play the song
         const Embed = new EmbedBuilder()
             .setColor('#0099ff')
-            .setTitle(resource.metadata.title)
-            .setURL(resource.metadata.url)
-            .setAuthor({name: 'Now playing', url: resource.metadata.url})
+            .setTitle(this.currentResource.metadata.title)
+            .setURL(this.currentResource.metadata.url)
+            .setAuthor({name: 'Now playing', url: this.currentResource.metadata.url})
             .setDescription(description)
-            .setThumbnail(resource.metadata.thumbnail)
-            .addFields({name: 'Song duration', value: resource.metadata.duration})
+            .setThumbnail(this.currentResource.metadata.thumbnail)
+            .addFields({name: 'Song duration', value: this.currentResource.metadata.duration})
             .setTimestamp()
 
         this.messageChannel.send({ embeds: [Embed] });
-        this.player.play(resource)
+        this.player.play(this.currentResource)
     }
 
     /**
@@ -260,6 +273,7 @@ module.exports = class musicBot {
      * Skips the current song
      */
     skip() {
+        if(this.loop) this.stopLoop()
         if(this.queue.isEmpty()) this.player.stop()
         else this.playSong()
     }
@@ -271,13 +285,7 @@ module.exports = class musicBot {
     async seek(seekTime) {
         // Get the current resource being played by the AudioPlayer
         try {
-            let stream = await play.stream(this.currentResource, { seek : parseInt(seekTime) })
-            let shortResource = createAudioResource(stream.stream, {
-                inputType : stream.type,
-                metadata : {
-                    url : this.currentResource,
-                }
-            })
+            const shortResource = await this.reloadSong(seekTime)
             this.player.stop()
             this.player.play(shortResource)
         } catch (err) {logger.error(err)}
@@ -312,6 +320,19 @@ module.exports = class musicBot {
             messageChannel.send({ embeds: [Error] });
         }
         else this.queue.removeAt(index)
+    }
+
+    async startLoop() {
+        this.loop = true
+        if(this.currentResource) {
+            const resource = await this.reloadSong(0)
+            this.queue.addFirst(resource)
+        }
+    }
+    
+    stopLoop() {
+        this.loop = false
+        if(this.currentResource.metadata.url == this.queue.peek().metadata.url) this.queue.pop()
     }
 
 }

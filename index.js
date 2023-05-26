@@ -1,7 +1,5 @@
 const play = require('play-dl')
-const command_list = require('./commands')
 const logger = require('./logging');
-
 const dotenv = require('dotenv');
 dotenv.config();
 const token = process.env.BOT_TOKEN
@@ -20,6 +18,13 @@ const commandRegister = require("./commandRegister");
 commandRegister().then(result => {
     client.commands = result
 })
+
+const command_list = require('./commands')
+const command_list_lowercase = {}
+Object.keys(command_list).forEach((key) => {
+    command_list_lowercase[key.toLowerCase()] = command_list[key];
+});
+
 
 // Main logic for detecting changes in voice channel
 client.on(Events.VoiceStateUpdate, (oldState, newState) => {
@@ -56,32 +61,21 @@ client.on(Events.InteractionCreate, async interaction => {
 
 // Main interaction logic for ! commands
 client.on(Events.MessageCreate, async message => {
-
-    if(message.content.startsWith("!")) logger.debug("Command received: " + message.content)
-
-    if(message.content.startsWith("!play")){
-        command_list.play(client, message)
-    } else if(message.content.startsWith("bot get him")) {
-        command_list.botGetHim(client, message)
-    } else if(message.content.startsWith("!leave")) {
-        command_list.leave(client, message)
-    } else if(message.content.startsWith("!skip")) {
-        command_list.skip(client, message)
-    } else if(message.content.startsWith("!pause")) {
-        command_list.pause(client, message)
-    } else if (message.content.startsWith("!resume")) {
-        command_list.resume(client, message)
-    } else if(message.content.startsWith("!queue")) {
-        command_list.queue(client, message)
-    } else if(message.content.startsWith("!clean")) {
-        command_list.clean(client, message)
-    } else if(message.content.startsWith("!seek")) {
-        command_list.seek(client, message)
-    } else if(message.content.startsWith("!dequeue")) {
-        command_list.dequeue(client, message)
-    } else if(message.content.startsWith("!clearqueue")) {
-        command_list.clearQueue(client, message)
+    if(message.content.startsWith("!")) {
+        logger.debug("Command received: " + message.content)
+        
+        let command_name = message.content.split("!")[1].split(" ")[0].toLowerCase()
+        if(command_name in command_list_lowercase) command_list_lowercase[command_name](client, message)
     }
+
+    Object.keys(command_list).forEach((key) => {
+        command_list_lowercase[key.toLowerCase()] = command_list[key];
+    });
+
+    //Left here as easter egg for the first command ever created
+    if(message.content.startsWith("bot get him")) {
+        command_list.botGetHim(client, message)
+    } 
 })
 
 logger.info("Successfully logged in and running!")
