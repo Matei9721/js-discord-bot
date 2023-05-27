@@ -1,6 +1,12 @@
 const play = require('play-dl')
 const logger = require('./logging');
 const dotenv = require('dotenv');
+const natural = require('natural');
+const command_list = require('./commands')
+
+// Give command info to the client variable and initialize slash commands
+const commandRegister = require("./commandRegister");
+
 dotenv.config();
 const token = process.env.BOT_TOKEN
 
@@ -13,17 +19,34 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBit
 // Give map for playlists in client
 client.botMap = new Map();
 
-// Give command info to the client variable and initialize slash commands
-const commandRegister = require("./commandRegister");
 commandRegister().then(result => {
     client.commands = result
 })
 
-const command_list = require('./commands')
 const command_list_lowercase = {}
+let available_commands = []
 Object.keys(command_list).forEach((key) => {
     command_list_lowercase[key.toLowerCase()] = command_list[key];
+    available_commands.push(key.toLowerCase())
 });
+
+// Function to find the best match
+function matchCommand(input) {
+    let bestMatch = "no command";
+    let bestDistance = Infinity;
+    const maxDistance = 3
+
+    for (const command of available_commands) {
+        const distance = natural.LevenshteinDistance(input, command);
+
+        if (distance < bestDistance && distance < maxDistance) {
+            bestMatch = command;
+            bestDistance = distance;
+        }
+    }
+
+    return bestMatch;
+}
 
 
 // Main logic for detecting changes in voice channel
@@ -64,13 +87,9 @@ client.on(Events.MessageCreate, async message => {
     if(message.content.startsWith("!")) {
         logger.debug("Command received: " + message.content)
         
-        let command_name = message.content.split("!")[1].split(" ")[0].toLowerCase()
+        let command_name = matchCommand(message.content.split("!")[1].split(" ")[0].toLowerCase())
         if(command_name in command_list_lowercase) command_list_lowercase[command_name](client, message)
     }
-
-    Object.keys(command_list).forEach((key) => {
-        command_list_lowercase[key.toLowerCase()] = command_list[key];
-    });
 
     //Left here as easter egg for the first command ever created
     if(message.content.startsWith("bot get him")) {
