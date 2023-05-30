@@ -41,6 +41,7 @@ client.on(Events.VoiceStateUpdate, (oldState, newState) => {
     if(oldState.channelId && !newState.channelId){
         // Bot was disconnected?
         if(client.botMap.has(newState.guild.id)) {
+            console.log("Got into inner if")
             client.botMap.get(newState.guild.id).leaveMusic()
         }
 
