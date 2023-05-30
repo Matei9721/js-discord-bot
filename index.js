@@ -28,7 +28,7 @@ Object.keys(command_list).forEach((key) => {
 
 // Main logic for detecting changes in voice channel
 client.on(Events.VoiceStateUpdate, (oldState, newState) => {
-    console.log("INside listener")
+    console.log("Inside listener with " + newState.member.user.id + " and " + process.env.Client_ID)
     //Checks and returns if the state change concerns the bot, otherwise continue
     if(newState.member.user.id !== process.env.Client_ID) return
 
