@@ -28,6 +28,7 @@ Object.keys(command_list).forEach((key) => {
 
 // Main logic for detecting changes in voice channel
 client.on(Events.VoiceStateUpdate, (oldState, newState) => {
+    console.log("INside listener")
     //Checks and returns if the state change concerns the bot, otherwise continue
     if(newState.member.user.id !== process.env.Client_ID) return
 
@@ -37,8 +38,10 @@ client.on(Events.VoiceStateUpdate, (oldState, newState) => {
     // Some connection
     if(!oldState.channelId && newState.channelId) return logger.debug('Connection Update');
 
+    console.log("Almost there")
     // Disconnection
     if(oldState.channelId && !newState.channelId){
+        console.log("Inside first if")
         // Bot was disconnected?
         if(client.botMap.has(newState.guild.id)) {
             console.log("Got into inner if")
