@@ -75,7 +75,10 @@ client.on(Events.MessageCreate, async message => {
     //Left here as easter egg for the first command ever created
     if(message.content.startsWith("bot get him")) {
         command_list.botGetHim(client, message)
-    } 
+    }
+
+    command_list_lowercase["triviainput"](client, message)
+
 })
 
 logger.info("Successfully logged in and running!")

@@ -1,6 +1,6 @@
 const botModel = require("./botModel");
 const logger = require('./logging');
-
+const triviaBot = require("./triviaBot");
 //MusicBot Commands
 
 function play(client, message) {
@@ -116,6 +116,35 @@ function botGetHim(client, message) {
     " you bought monkey nft + you're weirdchamp + you're a clown + my dad owns steam")
 
 }
+function trivia(client, message) {
+  //If we receive !play make sure we have a bot initialized
+  if(!client.botMap.has(message.guild.id)) {
+    client.botMap.set(message.guild.id, new botModel())
+    client.botMap.get(message.guild.id).triviaBot = new triviaBot()
+    logger.info("Created new instance for Guild " + message.guild.name)
+  }
+
+  try{
+    client.botMap.get(message.guild.id).triviaBot.start(message.channel, message.member.voice.channel)
+  } catch (err) {
+    console.log(err)
+  }
+}
+
+function triviainput(client, message) {
+  console.log("got message: ", message.content)
+  if(!client.botMap.has(message.guild.id)) {
+    client.botMap.set(message.guild.id, new botModel())
+  }
+
+  if (client.botMap.get(message.guild.id).triviaBot){
+    if (client.botMap.get(message.guild.id).triviaBot.messageChannel === message.channel) {
+      console.log("Bout to call user input")
+      client.botMap.get(message.guild.id).triviaBot.userInput(message)
+    }
+  }
+}
+
 
 module.exports = {
   play: play,
@@ -131,4 +160,6 @@ module.exports = {
   dequeue: dequeue,
   loop: loop,
   stopLoop: stopLoop,
+  trivia: trivia,
+  triviainput: triviainput
 };
