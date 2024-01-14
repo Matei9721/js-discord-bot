@@ -142,11 +142,12 @@ module.exports = class musicBot {
      * @param {String} rest Song URL/title to be added to the queue
      * @returns Stops early only if there is no song currently playing
      */
-    async addToQueue(rest) {
+    async addToQueue(rest, isSpotifyList=false) {
         await this.addResource(rest)
         
         //Base case: If the player is idle add the song to the queue and play it
         if(this.player.state.status === "idle") return
+        if(isSpotifyList) return
 
         //Different messages for adding a playlist or a song
         if(rest.includes("playlist")) {
@@ -227,18 +228,37 @@ module.exports = class musicBot {
     async play(messageChannel, voiceChannel, input) {
         //Ensure that we send messages to the text channel where the bot was last used for music
         this.messageChannel = messageChannel
-        
-        //Check if the string received is a youtube regex or not
-        let youtube_regex = /^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube(-nocookie)?\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$/
-        if(youtube_regex.test(input)) input = input.split("&")[0]
-                
+
         //Connect the bot to the voice channel if it is not there yet
         if(!this.connection) this.createConnection(voiceChannel)
         
+        const spotifyReg = /(https?:\/\/open.spotify.com\/(track|user|artist|album|playlist)\/[a-zA-Z0-9]+(\/playlist\/[a-zA-Z0-9]+(?:\?si=[a-zA-Z0-9]+)?|)|spotify:(track|user|artist|album|playlist):[a-zA-Z0-9]+(?::playlist:[a-zA-Z0-9]+|))/
+        const youtubeReg = /^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube(-nocookie)?\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$/
+        
+        //Check if the string received is a Spotify url
+        if(spotifyReg.test(input)) {
+            this.playSpotify(input)
+        }
+        //Check if the string received is a YouTube url
+        else if(youtubeReg.test(input)) {
+            input = input.split("&")[0]
+            this.playYoutube(input)
+        }
+        //Try to find a song with matching name
+        else {
+            this.playYoutube(input)
+        }
+    }
+    
+    /**
+     * Play command logic which will end up playing/adding to the queue a song/playlist
+     * @param {*} input Song URL/title which needs to be played
+     */
+    async playYoutube(input, isSpotifyList=false) {
         //Try to add the song
         try{
             logger.debug(input)
-            await this.addToQueue(input)
+            await this.addToQueue(input, isSpotifyList)
             //If the bot is currently idle, play the song
             if (this.player.state.status === "idle") {
                 try {
@@ -251,8 +271,54 @@ module.exports = class musicBot {
         } catch (err) {
             this.errorMessage(this.messageChannel)
             logger.error(err)
+        }    
+    }
+
+    /**
+     * Adds the song/album/playlist to the queue
+     * @param {*} input Spotify URL which needs to be played
+     */
+    async playSpotify(input) {
+        //Check if Spotify token needs refresh
+        try{
+            if (play.is_expired()) {
+                await play.refreshToken()
+            }
+        } catch(error) {
+            console.log("Spotify credentials might have not been set up!")
+            messageChannel.send("This bot does not have Spotify set up.")
+            return
         }
+
+        //Fetch data from Spotify
+        let sp_data = await play.spotify(input)
         
+        // Check the type of Spotify resource and handle accordingly
+        if (sp_data.type === 'track') {
+            // It's a song
+            this.addSpotifyTrack(sp_data, false)
+        } else if (sp_data.type === 'album' || sp_data.type === 'playlist') {
+            // It's an album or playlist
+            const tracklist = sp_data.fetched_tracks.get("1")
+            this.messageChannel.send(`Adding ${tracklist.length} songs from Spotify to the queue.`)
+            for(const track of tracklist) {
+                this.addSpotifyTrack(track, true)
+            }
+        } else {
+            // Unsupported Spotify resource type
+            messageChannel.send('Unsupported Spotify resource type. Only public songs, playlists and albums are available.')
+        }
+    }
+
+    /**
+     * Calls YouTube play function to play a song found on Spotify
+     * @param {*} track Spotify Track which needs to be played
+     */
+    addSpotifyTrack(track, isSpotifyList){
+        const artist = track.artists[0].name
+        const songName = track.name
+        const searchName = artist + " " + songName
+        this.playYoutube(searchName, isSpotifyList)
     }
 
     /**
@@ -334,5 +400,4 @@ module.exports = class musicBot {
         this.loop = false
         if(this.currentResource.metadata.url == this.queue.peek().metadata.url) this.queue.pop()
     }
-
 }

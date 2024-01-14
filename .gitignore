@@ -105,6 +105,7 @@ dist
 
 #Youtube cookies
 youtube.data
+spotify.data
 
 # VsCode configuration files
 .vscode

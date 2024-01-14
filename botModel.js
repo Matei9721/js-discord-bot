@@ -6,7 +6,11 @@ module.exports = class botModel {
     }
 
     leaveMusic() {
-        if(this.musicBot.connection) this.musicBot.connection.destroy()
+        if(this.musicBot.connection) {
+            this.musicBot.connection.destroy()
+            this.musicBot.player.stop()
+            this.musicBot.clearQueue()
+        }
         this.musicBot = new musicBot
     }
 }
