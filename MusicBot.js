@@ -59,7 +59,7 @@ module.exports = class musicBot {
                     try {
                         this.playSong()
                     } catch (err) {
-                        this.errorMessage(this.messageChannel)
+                        this.errorMessage()
                     }
                     first_song = false
                 }
@@ -178,15 +178,14 @@ module.exports = class musicBot {
 
     /**
      * Displays the error message for invalid resource/input
-     * @param {*} channel Channel in which to display the message
      */
-    errorMessage(channel) {
+    errorMessage() {
         const Error = new EmbedBuilder()
             .setColor('#ff0000')
             .setTitle("Error while loading song or playlist")
             .setDescription('Check the link or name of the song, it might not exist!')
             .setTimestamp()
-        channel.send({ embeds: [Error] });
+        this.messageChannel.send({ embeds: [Error] });
     }
 
     /**
@@ -232,7 +231,7 @@ module.exports = class musicBot {
         //Connect the bot to the voice channel if it is not there yet
         if(!this.connection) this.createConnection(voiceChannel)
         
-        const spotifyReg = /(https?:\/\/open.spotify.com\/(track|user|artist|album|playlist)\/[a-zA-Z0-9]+(\/playlist\/[a-zA-Z0-9]+(?:\?si=[a-zA-Z0-9]+)?|)|spotify:(track|user|artist|album|playlist):[a-zA-Z0-9]+(?::playlist:[a-zA-Z0-9]+|))/
+        const spotifyReg = /^(https?:\/\/open.spotify.com\/(track|user|artist|album|playlist)\/[a-zA-Z0-9]+(\/playlist\/[a-zA-Z0-9]+(?:\?si=[a-zA-Z0-9]+)?|)|spotify:(track|user|artist|album|playlist):[a-zA-Z0-9]+(?::playlist:[a-zA-Z0-9]+|))/
         const youtubeReg = /^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube(-nocookie)?\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$/
         
         //Check if the string received is a Spotify url
@@ -264,12 +263,15 @@ module.exports = class musicBot {
                 try {
                     this.playSong()
                 } catch (err) {
-                    this.errorMessage(this.messageChannel)
                     throw new Error(err)
                 }
             }
         } catch (err) {
-            this.errorMessage(this.messageChannel)
+            if(isSpotifyList) {
+                logger.error("A song from a Spotify playlist/album failed to load or was not found.")
+                return
+            }
+            this.errorMessage()
             logger.error(err)
         }    
     }
@@ -286,7 +288,7 @@ module.exports = class musicBot {
             }
         } catch(error) {
             console.log("Spotify credentials might have not been set up!")
-            messageChannel.send("This bot does not have Spotify set up.")
+            this.messageChannel.send("This bot does not have Spotify set up.")
             return
         }
 
@@ -306,7 +308,7 @@ module.exports = class musicBot {
             }
         } else {
             // Unsupported Spotify resource type
-            messageChannel.send('Unsupported Spotify resource type. Only public songs, playlists and albums are available.')
+            this.messageChannel.send('Unsupported Spotify resource type. Only public songs, playlists and albums are available.')
         }
     }
 
@@ -366,7 +368,7 @@ module.exports = class musicBot {
             .setColor('#0099ff')
             .setAuthor({name : 'Songs in queue:'})
             .setDescription('There are ' + this.queue.getSize() + ' more songs in the queue')
-            .addFields(fields)
+            .addFields(fields.slice(0,24))
             .setTimestamp()
         this.messageChannel.send({ embeds: [Embed] });
     }
@@ -375,7 +377,7 @@ module.exports = class musicBot {
         this.queue = new musicQueue
     }
 
-    removeSongAt(position, messageChannel) {
+    removeSongAt(position) {
         const index = position - 1
         if(index < 0 || position > this.queue.getSize()) {
             const Error = new EmbedBuilder()
@@ -383,7 +385,7 @@ module.exports = class musicBot {
                 .setTitle("Invalid Input")
                 .setDescription('Your input was larger/smaller than the size of the queue!')
                 .setTimestamp()
-            messageChannel.send({ embeds: [Error] });
+            this.messageChannel.send({ embeds: [Error] });
         }
         else this.queue.removeAt(index)
     }
