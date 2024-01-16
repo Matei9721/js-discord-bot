@@ -59,7 +59,7 @@ module.exports = class musicBot {
                     try {
                         this.playSong()
                     } catch (err) {
-                        this.errorMessage(this.messageChannel)
+                        this.errorMessage()
                     }
                     first_song = false
                 }
@@ -142,11 +142,12 @@ module.exports = class musicBot {
      * @param {String} rest Song URL/title to be added to the queue
      * @returns Stops early only if there is no song currently playing
      */
-    async addToQueue(rest) {
+    async addToQueue(rest, isSpotifyList=false) {
         await this.addResource(rest)
         
         //Base case: If the player is idle add the song to the queue and play it
         if(this.player.state.status === "idle") return
+        if(isSpotifyList) return
 
         //Different messages for adding a playlist or a song
         if(rest.includes("playlist")) {
@@ -177,15 +178,14 @@ module.exports = class musicBot {
 
     /**
      * Displays the error message for invalid resource/input
-     * @param {*} channel Channel in which to display the message
      */
-    errorMessage(channel) {
+    errorMessage() {
         const Error = new EmbedBuilder()
             .setColor('#ff0000')
             .setTitle("Error while loading song or playlist")
             .setDescription('Check the link or name of the song, it might not exist!')
             .setTimestamp()
-        channel.send({ embeds: [Error] });
+        this.messageChannel.send({ embeds: [Error] });
     }
 
     /**
@@ -227,32 +227,100 @@ module.exports = class musicBot {
     async play(messageChannel, voiceChannel, input) {
         //Ensure that we send messages to the text channel where the bot was last used for music
         this.messageChannel = messageChannel
-        
-        //Check if the string received is a youtube regex or not
-        let youtube_regex = /^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube(-nocookie)?\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$/
-        if(youtube_regex.test(input)) input = input.split("&")[0]
-                
+
         //Connect the bot to the voice channel if it is not there yet
         if(!this.connection) this.createConnection(voiceChannel)
         
+        const spotifyReg = /^(https?:\/\/open.spotify.com\/(track|user|artist|album|playlist)\/[a-zA-Z0-9]+(\/playlist\/[a-zA-Z0-9]+(?:\?si=[a-zA-Z0-9]+)?|)|spotify:(track|user|artist|album|playlist):[a-zA-Z0-9]+(?::playlist:[a-zA-Z0-9]+|))/
+        const youtubeReg = /^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube(-nocookie)?\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$/
+        
+        //Check if the string received is a Spotify url
+        if(spotifyReg.test(input)) {
+            this.playSpotify(input)
+        }
+        //Check if the string received is a YouTube url
+        else if(youtubeReg.test(input)) {
+            input = input.split("&")[0]
+            this.playYoutube(input)
+        }
+        //Try to find a song with matching name
+        else {
+            this.playYoutube(input)
+        }
+    }
+    
+    /**
+     * Play command logic which will end up playing/adding to the queue a song/playlist
+     * @param {*} input Song URL/title which needs to be played
+     */
+    async playYoutube(input, isSpotifyList=false) {
         //Try to add the song
         try{
             logger.debug(input)
-            await this.addToQueue(input)
+            await this.addToQueue(input, isSpotifyList)
             //If the bot is currently idle, play the song
             if (this.player.state.status === "idle") {
                 try {
                     this.playSong()
                 } catch (err) {
-                    this.errorMessage(this.messageChannel)
                     throw new Error(err)
                 }
             }
         } catch (err) {
-            this.errorMessage(this.messageChannel)
+            if(isSpotifyList) {
+                logger.error("A song from a Spotify playlist/album failed to load or was not found.")
+                return
+            }
+            this.errorMessage()
             logger.error(err)
+        }    
+    }
+
+    /**
+     * Adds the song/album/playlist to the queue
+     * @param {*} input Spotify URL which needs to be played
+     */
+    async playSpotify(input) {
+        //Check if Spotify token needs refresh
+        try{
+            if (play.is_expired()) {
+                await play.refreshToken()
+            }
+        } catch(error) {
+            console.log("Spotify credentials might have not been set up!")
+            this.messageChannel.send("This bot does not have Spotify set up.")
+            return
         }
+
+        //Fetch data from Spotify
+        let sp_data = await play.spotify(input)
         
+        // Check the type of Spotify resource and handle accordingly
+        if (sp_data.type === 'track') {
+            // It's a song
+            this.addSpotifyTrack(sp_data, false)
+        } else if (sp_data.type === 'album' || sp_data.type === 'playlist') {
+            // It's an album or playlist
+            const tracklist = sp_data.fetched_tracks.get("1")
+            this.messageChannel.send(`Adding ${tracklist.length} songs from Spotify to the queue.`)
+            for(const track of tracklist) {
+                this.addSpotifyTrack(track, true)
+            }
+        } else {
+            // Unsupported Spotify resource type
+            this.messageChannel.send('Unsupported Spotify resource type. Only public songs, playlists and albums are available.')
+        }
+    }
+
+    /**
+     * Calls YouTube play function to play a song found on Spotify
+     * @param {*} track Spotify Track which needs to be played
+     */
+    addSpotifyTrack(track, isSpotifyList){
+        const artist = track.artists[0].name
+        const songName = track.name
+        const searchName = artist + " " + songName
+        this.playYoutube(searchName, isSpotifyList)
     }
 
     /**
@@ -300,7 +368,7 @@ module.exports = class musicBot {
             .setColor('#0099ff')
             .setAuthor({name : 'Songs in queue:'})
             .setDescription('There are ' + this.queue.getSize() + ' more songs in the queue')
-            .addFields(fields)
+            .addFields(fields.slice(0,24))
             .setTimestamp()
         this.messageChannel.send({ embeds: [Embed] });
     }
@@ -309,7 +377,7 @@ module.exports = class musicBot {
         this.queue = new musicQueue
     }
 
-    removeSongAt(position, messageChannel) {
+    removeSongAt(position) {
         const index = position - 1
         if(index < 0 || position > this.queue.getSize()) {
             const Error = new EmbedBuilder()
@@ -317,7 +385,7 @@ module.exports = class musicBot {
                 .setTitle("Invalid Input")
                 .setDescription('Your input was larger/smaller than the size of the queue!')
                 .setTimestamp()
-            messageChannel.send({ embeds: [Error] });
+            this.messageChannel.send({ embeds: [Error] });
         }
         else this.queue.removeAt(index)
     }
@@ -334,5 +402,4 @@ module.exports = class musicBot {
         this.loop = false
         if(this.currentResource.metadata.url == this.queue.peek().metadata.url) this.queue.pop()
     }
-
 }

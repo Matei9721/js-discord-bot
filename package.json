@@ -19,7 +19,7 @@
     "ffmpeg": "^0.0.4",
     "ffmpeg-static": "^4.4.0",
     "fluent-ffmpeg": "^2.1.2",
-    "libsodium-wrappers": "^0.7.11",
+    "libsodium-wrappers": "^0.7.13",
     "play-dl": "^1.9.2",
     "winston": "^3.8.2",
     "youtube-search-api": "^1.0.11"

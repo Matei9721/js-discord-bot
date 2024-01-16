@@ -1,10 +1,7 @@
-const play = require('play-dl')
 const logger = require('./logging');
 const dotenv = require('dotenv');
 dotenv.config();
 const token = process.env.BOT_TOKEN
-
-play.authorization()
 
 const { Client, GatewayIntentBits, Events} = require('discord.js');
 

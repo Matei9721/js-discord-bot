@@ -6,10 +6,10 @@ const logger = require('../logging');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('play')
-        .setDescription('Plays a song from youtube using link or name')
+        .setDescription('Plays a song from YouTube or Spotify using link or name')
         .addStringOption((option) => option
             .setName('song')
-            .setDescription('The url or name of the song')
+            .setDescription('The URL or name of the song')
             .setRequired(true)),
 
 
