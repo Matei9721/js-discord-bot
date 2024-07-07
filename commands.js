@@ -11,7 +11,9 @@ function play(client, message) {
   }
   try{
     let input = message.content.split(' ');input.shift(); input = input.join(' ')
-    client.botMap.get(message.guild.id).musicBot.play(message.channel, message.member.voice.channel, input)
+    client.botMap.get(message.guild.id).musicBot.play(message.channel, message.member.voice.channel, input).catch(err =>
+      console.log(err)
+    )
   } catch (err) {
     console.log(err)
   }

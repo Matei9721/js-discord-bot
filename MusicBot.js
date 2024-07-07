@@ -192,8 +192,11 @@ module.exports = class musicBot {
      * Connects bot to given voice channel
      * @param {*} voiceChannel Voice channel which the bot connects to
      */
-    async createConnection(voiceChannel) {
-        if (!voiceChannel) this.messageChannel.send("I am an idiot bot and I don't know what to do if you are not in a voice room")
+    createConnection(voiceChannel) {
+        if (!voiceChannel) {
+            this.messageChannel.send("I am an idiot bot and I don't know what to do if you are not in a voice room")
+            throw "User not detected in a voice channel!"
+        }
 
         //Check if the bot has the minimum permissions
         const permissions = voiceChannel.permissionsFor(this.messageChannel.client.user);
@@ -213,7 +216,7 @@ module.exports = class musicBot {
                     this.connection.configureNetworking();
                 }
             })
-            await entersState(this.connection, VoiceConnectionStatus.Ready, 30e3);
+            entersState(this.connection, VoiceConnectionStatus.Ready, 30e3);
             this.connection.subscribe(this.player);
         }
     }
@@ -229,7 +232,7 @@ module.exports = class musicBot {
         this.messageChannel = messageChannel
 
         //Connect the bot to the voice channel if it is not there yet
-        if(!this.connection) this.createConnection(voiceChannel)
+        if(!this.connection) await this.createConnection(voiceChannel)
         
         const spotifyReg = /^(https?:\/\/open.spotify.com\/(track|user|artist|album|playlist)\/[a-zA-Z0-9]+(\/playlist\/[a-zA-Z0-9]+(?:\?si=[a-zA-Z0-9]+)?|)|spotify:(track|user|artist|album|playlist):[a-zA-Z0-9]+(?::playlist:[a-zA-Z0-9]+|))/
         const youtubeReg = /^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube(-nocookie)?\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$/
