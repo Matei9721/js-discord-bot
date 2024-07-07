@@ -17,7 +17,7 @@ module.exports = {
             sleepFunc(seconds).then(() => { interaction.deleteReply() })
             // no need to send any response back to the user
         } catch (error) {
-            console.error(error);
+            logger.error(error);
         }
     },
 };

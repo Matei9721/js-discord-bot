@@ -29,10 +29,10 @@ module.exports = {
             const bot = client.botMap.get(interaction.guild.id)
             const voiceChannel = interaction.member.voice.channel
             await bot.musicBot.play(interaction.channel, voiceChannel, input).catch(err =>{
-                console.error(err)
+                logger.error(err)
             })
         } catch (err) {
-            console.error(err)
+            logger.error(err)
         }
 
     },
