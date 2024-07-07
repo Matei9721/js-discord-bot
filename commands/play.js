@@ -28,9 +28,11 @@ module.exports = {
             const input = interaction.options.get("song").value
             const bot = client.botMap.get(interaction.guild.id)
             const voiceChannel = interaction.member.voice.channel
-            await bot.musicBot.play(interaction.channel, voiceChannel, input);
+            await bot.musicBot.play(interaction.channel, voiceChannel, input).catch(err =>{
+                logger.error(err)
+            })
         } catch (err) {
-            console.error(err)
+            logger.error(err)
         }
 
     },
