@@ -290,7 +290,7 @@ module.exports = class musicBot {
                 await play.refreshToken()
             }
         } catch(error) {
-            console.log("Spotify credentials might have not been set up!")
+            logger.error("Spotify credentials might have not been set up!")
             this.messageChannel.send("This bot does not have Spotify set up.")
             return
         }

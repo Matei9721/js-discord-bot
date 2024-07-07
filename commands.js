@@ -12,10 +12,10 @@ function play(client, message) {
   try{
     let input = message.content.split(' ');input.shift(); input = input.join(' ')
     client.botMap.get(message.guild.id).musicBot.play(message.channel, message.member.voice.channel, input).catch(err =>
-      console.log(err)
+      logger.error(err)
     )
   } catch (err) {
-    console.log(err)
+    logger.error(err)
   }
 }
 
@@ -51,7 +51,7 @@ function resume(client, message) {
 
 function seek(client, message) {
   if(client.botMap.has(message.guild.id)){
-    console.log("seeking")
+    logger.info("Seeking into the song")
     const seekTime = message.content.split(' ')[1]
     client.botMap.get(message.guild.id).musicBot.seek(seekTime)
   }
