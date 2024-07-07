@@ -192,7 +192,7 @@ module.exports = class musicBot {
      * Connects bot to given voice channel
      * @param {*} voiceChannel Voice channel which the bot connects to
      */
-    createConnection(voiceChannel) {
+    async createConnection(voiceChannel) {
         if (!voiceChannel) {
             this.messageChannel.send("I am an idiot bot and I don't know what to do if you are not in a voice room")
             throw "User not detected in a voice channel!"
@@ -216,7 +216,7 @@ module.exports = class musicBot {
                     this.connection.configureNetworking();
                 }
             })
-            entersState(this.connection, VoiceConnectionStatus.Ready, 30e3);
+            await entersState(this.connection, VoiceConnectionStatus.Ready, 30e3);
             this.connection.subscribe(this.player);
         }
     }
