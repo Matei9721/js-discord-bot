@@ -5,7 +5,7 @@ const { joinVoiceChannel,
     AudioPlayerStatus,
     NoSubscriberBehavior,
     VoiceConnectionStatus, } = require('@discordjs/voice');
-const play = require('play-dl')
+const play = require('./play-dl/index.js')
 const {EmbedBuilder, PermissionsBitField} = require("discord.js");
 const musicQueue = require('./musicQueue');
 const logger = require('./logging');
