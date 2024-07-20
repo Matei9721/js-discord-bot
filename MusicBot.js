@@ -60,6 +60,7 @@ module.exports = class musicBot {
                         this.playSong()
                     } catch (err) {
                         this.errorMessage()
+                        throw err
                     }
                     first_song = false
                 }
@@ -276,6 +277,7 @@ module.exports = class musicBot {
             }
             this.errorMessage()
             logger.error(err)
+            throw err
         }    
     }
 

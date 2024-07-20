@@ -28,5 +28,5 @@
     "discord-api-types": "^0.25.2",
     "ytdl-core": "^4.9.2"
   },
-  "nodeVersion": "21.6.2"
+  "nodeVersion": "20.13.0"
 }

@@ -16,6 +16,8 @@ function play(client, message) {
     )
   } catch (err) {
     logger.error(err)
+    throw err
+
   }
 }
 
