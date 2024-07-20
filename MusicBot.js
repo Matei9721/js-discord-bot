@@ -6,6 +6,7 @@ const { joinVoiceChannel,
     NoSubscriberBehavior,
     VoiceConnectionStatus, } = require('@discordjs/voice');
 const play = require('./play-dl/index.js')
+const ytstream  = require('yt-stream');
 const {EmbedBuilder, PermissionsBitField} = require("discord.js");
 const musicQueue = require('./musicQueue');
 const logger = require('./logging');
@@ -80,7 +81,13 @@ module.exports = class musicBot {
      * @returns Loaded resource
      */
     async loadSong(song) {
-        const stream = await play.stream(song.url)
+        const stream = await ytstream.stream(song.url, {
+            quality: 'high',
+            type: 'audio',
+            highWaterMark: 1048576 * 32,
+            download: true
+        });
+        //const stream = await play.stream(song.url)
         const resource = createAudioResource(stream.stream, {
             inputType : stream.type,
             metadata : {
