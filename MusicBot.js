@@ -283,6 +283,7 @@ module.exports = class musicBot {
             }
             this.errorMessage()
             logger.error(err)
+            throw err
         }    
     }
 
