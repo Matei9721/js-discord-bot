@@ -1,6 +1,7 @@
 const { useQueue } = require('discord-player');
 const { PermissionFlagsBits } = require('discord.js');
 const { botReply } = require('./bot-reply');
+const { createChatbot } = require('./chatbot');
 const logger = require('./logging');
 const controls = new Set(['play', 'pause', 'resume', 'skip', 'seek', 'loop', 'shuffle', 'clearqueue', 'leave']);
 
@@ -25,13 +26,14 @@ async function guard(name, member, channel) {
         if (!channel.permissionsFor(member.guild.members.me)?.has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks])) throw new Error('I need View Channel, Send Messages and Embed Links in this text channel.');
     }
 }
-function createHandlers(client, player) {
+function createHandlers(client, player, chat = createChatbot(client)) {
     const run = (guild, fn) => player.context.provide({ guild }, fn);
     async function report(error, channel, interaction) {
         logger.warn(`[Command] ${error.message}`);
         await botReply(error.message.slice(0, 1800), channel, interaction).catch(replyError => logger.warn(`[Reply] ${replyError.code || replyError.name}`));
     }
     return {
+        shutdown: () => chat.close(),
         interaction: async interaction => {
             if (!interaction.isChatInputCommand() || !interaction.inGuild()) return;
             const command = client.commands.get(interaction.commandName);
@@ -49,7 +51,7 @@ function createHandlers(client, player) {
         message: async message => {
             if (!message.guild || message.author.bot || message.webhookId) return;
             const parsed = parseClassic(message.content, client.commandsClassic);
-            if (!parsed) return;
+            if (!parsed) return chat.handle(message);
             if (parsed.name === 'play' && message.channel.sendTyping) message.channel.sendTyping().catch(() => {});
             try {
                 await run(message.guild, async () => {

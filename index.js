@@ -12,10 +12,12 @@ async function main() {
     validateConfig();
     const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildVoiceStates, GatewayIntentBits.MessageContent], allowedMentions: { parse: [] } });
     let player;
+    let handlers;
     let stopping;
     async function shutdown() {
         if (stopping) return stopping;
         stopping = (async () => {
+            handlers?.shutdown();
             if (player) for (const queue of player.nodes.cache.values()) require('./music_logic/enqueue').cancelImports(queue);
             require('./youtube/prefetch').clear();
             await player?.destroy(); await client.destroy();
@@ -31,7 +33,7 @@ async function main() {
         player = await startPlayer(client);
         client.commands = loadCommands();
         client.commandsClassic = require('./commandClassicRegister')();
-        const handlers = createHandlers(client, player);
+        handlers = createHandlers(client, player);
         client.on(Events.InteractionCreate, handlers.interaction);
         client.on(Events.MessageCreate, handlers.message);
         client.on(Events.Error, error => logger.error(`[Discord] ${error.code || error.name}`));

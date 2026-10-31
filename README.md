@@ -29,7 +29,27 @@ The setup script installs checksum-verified official yt-dlp binaries in `.tools`
 
 Required `.env` keys: `BOT_TOKEN`, `CLIENT_ID`. `GUILD_ID` registers slash commands immediately in that server; omit it to register globally. `REGISTER_COMMANDS=false` skips registration on subsequent starts. Existing global commands are not deleted when using guild registration.
 
-In the Discord Developer Portal, enable **Message Content Intent** for `!` commands. Invite the bot with the `bot` and `applications.commands` scopes. Give it View Channel, Send Messages and Embed Links in the command channel, and View Channel, Connect and Speak in the voice channel. `clean` additionally requires Manage Messages for both the caller and bot. Slash commands acknowledge immediately while media is being looked up.
+In the Discord Developer Portal, enable **Message Content Intent** for `!` commands and chat. Invite the bot with the `bot` and `applications.commands` scopes. Give it View Channel, Send Messages, Read Message History and Embed Links in the command channel, and View Channel, Connect and Speak in the voice channel. `clean` additionally requires Manage Messages for both the caller and bot. Slash commands acknowledge immediately while media is being looked up.
+
+## DeepSeek chat
+
+Set `DEEPSEEK_API_KEY` in `.env` and restart the bot (Docker: `docker compose up -d --build`). Say **anime slave** anywhere in a message, case insensitive, @mention the bot, or reply to one of its messages. Ordinary messages do not call DeepSeek; recognized music commands keep priority. Other bots, webhooks and DMs cannot trigger chat.
+
+Each request sends at most **10 messages from that channel: the trigger plus the 9 immediately before it**, in chronological order, alongside the fixed personality instructions. The bot's own replies count toward that limit. Empty messages, webhooks and other bots are excluded without reaching further back. Each message includes its text, speaker name, UTC send time, and age in seconds relative to the trigger, with at most 4,000 text characters per message. Attachments, linked pages, reply references outside the window, other channels and older history are not included in the model input. There is no saved conversation, summary, or extra memory. Without history access, only the triggering message is used. These messages are sent to DeepSeek when chat is triggered.
+
+The bot is instructed to answer the latest message on its own when possible, and use history only for relevant follow-ups. A gap of five minutes or more is treated as a fresh topic by default; older messages are still available within the ten-message window for explicit follow-ups.
+
+The request explicitly separates optional `history` from the `current` message to answer. Earlier messages are quoted background data, rather than extra conversation turns waiting for answers. Replies are normal Discord text. If the model copies an internal message envelope anyway, it is unwrapped before being displayed, including during streaming. Older bot replies containing such envelopes are also unwrapped before reuse as history.
+
+The personality is blunt, sweary and abrasive, with short useful answers and no forced quirky jokes. Its prompt lives in `chatbot.js`. The default model is `deepseek-flash`, with thinking disabled for speed; override it with `DEEPSEEK_MODEL` if needed. See the [DeepSeek API reference](https://api-docs.deepseek.com/api/create-chat-completion).
+
+Replies stream by editing a single Discord reply, at most once every 1.5 seconds during generation, followed by a final update. Output stops at Discord's 2,000-character limit. Mentions are suppressed, so generated text cannot ping people or roles. One chat request runs per channel at a time; music commands remain available during generation. API requests time out after 45 seconds, and failures replace the placeholder or mark a partial answer as interrupted. API keys and provider response bodies are not logged.
+
+### Occasional song comments
+
+When a requested track starts playing, it has a **1-in-10 chance** of a short DeepSeek comment in the music command channel, tagging **that track's requester**. This applies to slash/prefix play commands and individual playlist entries as they start, rather than roasting an entire playlist at once. Each queue entry gets one roll; seeking or looping the same entry does not reroll it. Tracks without a known requester are skipped.
+
+Most comments roast the listener's taste using the song title, artist, and music/fandom stereotypes; 15% of selected comments ask for grudging respect instead. Only the title and artist are sent to DeepSeek, with no channel history or user details. Generation runs in the background with a 15-second timeout and posts one completed comment; it never delays music. Failed requests are quietly skipped, and unfinished comments are cancelled on skip, track finish, disconnect or queue deletion. Only the actual requester's mention is enabled; generated user/role/everyone mentions remain suppressed.
 
 ## Commands
 

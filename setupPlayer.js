@@ -5,11 +5,13 @@ const { YtDlpExtractor } = require('./youtube/YtDlpExtractor');
 const { botMessage } = require('./bot-reply');
 const logger = require('./logging');
 const { prefetchNext, forget } = require('./youtube/prefetch');
+const { attachSongCommentary } = require('./song-commentary');
 async function startPlayer(client) {
     const player = new Player(client, { ffmpegPath: process.env.FFMPEG_PATH, connectionTimeout: 30000, skipFFmpeg: true });
     player.on('error', error => logger.error(`[Player] ${error.message}`));
     await player.extractors.register(YtDlpExtractor, {});
     await player.extractors.register(SpotifyExtractor, {});
+    attachSongCommentary(player);
     for (const event of ['playerStart', 'audioTrackAdd', 'audioTracksAdd']) player.events.on(event, prefetchNext);
     for (const event of ['connectionDestroyed', 'queueDelete']) player.events.on(event, forget);
     const send = (queue, body) => {
