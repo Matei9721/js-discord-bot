@@ -20,6 +20,7 @@ async function shuffle(messageChannel, interaction) {
 
     // Shuffle the tracks in the queue
     queue.tracks.shuffle();
+    require('../youtube/prefetch').prefetchNext(queue);
 
     // Format the shuffled tracks within character limits
     const shuffledTracks = queue.tracks.toArray();

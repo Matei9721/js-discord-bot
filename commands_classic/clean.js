@@ -14,10 +14,10 @@ module.exports = {
         }
         const amount = parseInt(rest, 10)
 
-        if (amount >= 100) {
-            await botReply("Maximum input value is 99", message.channel)
+        if (!/^\d+$/.test(rest.trim()) || amount < 1 || amount >= 100) {
+            await botReply("Choose a whole number from 1 to 99.", message.channel)
             return;
         }
-        await message.channel.bulkDelete(amount + 1)
+        await message.channel.bulkDelete(amount + 1, true)
     },
 };

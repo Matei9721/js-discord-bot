@@ -1,4 +1,4 @@
-const {SlashCommandBuilder} = require('@discordjs/builders');
+const {SlashCommandBuilder} = require('discord.js');
 const {QueueRepeatMode} = require("discord-player");
 const {loop} = require("../music_logic/loop");
 const logger = require('../logging');

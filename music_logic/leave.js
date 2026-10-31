@@ -1,13 +1,11 @@
-const {useQueue} = require("discord-player");
-const {botReply} = require("../bot-reply");
-
+const { useQueue } = require('discord-player');
+const { botReply } = require('../bot-reply');
 async function leave(messageChannel, interaction) {
-    // Get the current queue
     const queue = useQueue();
-    queue.delete()
-    await botReply("Fine I'll leave :crying_cat_face:", messageChannel, interaction)
+    if (!queue) return botReply('This server does not have an active player session.', messageChannel, interaction);
+    require('./enqueue').cancelImports(queue);
+    require('../youtube/prefetch').forget(queue);
+    queue.delete();
+    await botReply('Disconnected and cleared the queue.', messageChannel, interaction);
 }
-
-module.exports = {
-    leave
-}
+module.exports = { leave };

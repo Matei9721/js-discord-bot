@@ -2,7 +2,7 @@ const MAX_CHARS = 900; // Discord embed field limit
 
 function generateSongList(tracks) {
     let tempText = '';
-    let remainingTracks = tracks.length; // Start with all tracks remaining
+    let remainingTracks = 0;
 
     // Add tracks until the character limit is reached
     for (let i = 0; i < tracks.length; i++) {

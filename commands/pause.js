@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('@discordjs/builders')
+const { SlashCommandBuilder } = require('discord.js')
 const {pause} = require("../music_logic/pause");
 
 module.exports = {

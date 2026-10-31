@@ -71,6 +71,12 @@ typings/
 # dotenv environment variables file
 .env
 .env.test
+.env.*
+!.env.example
+.tools/
+.docker-local/
+.idea/
+cookies*.txt
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache

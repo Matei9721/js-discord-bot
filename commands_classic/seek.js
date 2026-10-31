@@ -14,7 +14,7 @@ module.exports = {
             await botReply("Your input is not a number!", message.channel)
             return
         }
-        const seconds = parseInt(rest, 10)
+        const seconds = /^\d+$/.test(rest.trim()) ? Number(rest) : NaN
         await seek(seconds, message.channel)
     },
 };

@@ -1,20 +1,10 @@
-const fs = require('fs');
-const logger = require('./logging');
-
-// Initialize env file for BOT TOKEN
-const dotenv = require('dotenv');
-dotenv.config();
-
-/**
- * Returns all "!" commands
- * @returns {Map<any, any>} List of slash commands
- */
+const fs = require('node:fs');
+const path = require('node:path');
 module.exports = function () {
-    const commandsRet = new Map();
-    const commandFiles = fs.readdirSync('./commands_classic').filter(file => file.endsWith('.js'));
-    for (const file of commandFiles) {
-        const command = require(`./commands_classic/${file}`);
-        commandsRet.set(command.data.name, command);
+    const result = new Map();
+    for (const file of fs.readdirSync(path.join(__dirname, 'commands_classic')).filter(file => file.endsWith('.js'))) {
+        const command = require(path.join(__dirname, 'commands_classic', file));
+        result.set(command.data.name.toLowerCase(), command);
     }
-    return commandsRet
+    return result;
 };

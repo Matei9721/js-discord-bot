@@ -1,39 +1,19 @@
-const {REST} = require('@discordjs/rest');
-const {Routes} = require('discord-api-types/v9');
-const fs = require('fs');
-
-// Initialize env file for BOT TOKEN
-const dotenv = require('dotenv');
-dotenv.config();
-
-const token = process.env.BOT_TOKEN
-
-const commands = []
-const commandsRet = new Map();
-const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
-for (const file of commandFiles) {
-    const command = require(`./commands/${file}`);
-    commands.push(command.data.toJSON());
-    commandsRet.set(command.data.name, command);
+const { REST, Routes } = require('discord.js');
+const fs = require('node:fs');
+const path = require('node:path');
+function loadCommands() {
+    const result = new Map();
+    for (const file of fs.readdirSync(path.join(__dirname, 'commands')).filter(file => file.endsWith('.js')).sort()) {
+        const command = require(path.join(__dirname, 'commands', file));
+        result.set(command.data.name, command);
+    }
+    return result;
 }
-
-const rest = new REST({version: '9'}).setToken(token);
-
-async function registerCommands() {
-
-    //Note: uncomment this in if you want to register commands only to a specific server
-    //const guildID = process.env.GUILD_ID
-    const clientID = process.env.CLIENT_ID
-    await rest.put(//This version is for testing, by adding the commands only to a given guild
-        //Routes.applicationGuildCommands(clientID, guildID),
-        Routes.applicationCommands(clientID), {body: commands},);
-    return commandsRet
+async function registerCommands(commands = loadCommands(), rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN)) {
+    const route = process.env.GUILD_ID
+        ? Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID)
+        : Routes.applicationCommands(process.env.CLIENT_ID);
+    await rest.put(route, { body: [...commands.values()].map(command => command.data.toJSON()) });
+    return commands;
 }
-
-/**
- * Registers all slash commands to the server
- * @returns {Array} List of slash commands
- */
-module.exports = {
-    registerCommands
-}
+module.exports = { loadCommands, registerCommands };

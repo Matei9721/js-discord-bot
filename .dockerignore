@@ -1,0 +1,20 @@
+# Only ship application sources. Credentials and local files never enter context.
+**
+!package.json
+!package-lock.json
+!*.js
+!commands/
+!commands/**
+!commands_classic/
+!commands_classic/**
+!music_logic/
+!music_logic/**
+!utilities/
+!utilities/**
+!youtube/
+!youtube/**
+!audio/
+!audio/**
+!scripts/
+!scripts/**
+!README.md

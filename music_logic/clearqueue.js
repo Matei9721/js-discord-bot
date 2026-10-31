@@ -1,13 +1,11 @@
-const {useQueue} = require("discord-player");
-const {botReply} = require("../bot-reply");
-
-async function clear_queue(messageChannel, interaction) {
-    // Get the current queue
+const { useQueue } = require('discord-player');
+const { botReply } = require('../bot-reply');
+async function clearQueue(messageChannel, interaction) {
     const queue = useQueue();
-    queue.clear()
-    await botReply("Queue cleared.", messageChannel, interaction)
+    if (!queue) return botReply('This server does not have an active player session.', messageChannel, interaction);
+    require('./enqueue').cancelImports(queue);
+    queue.tracks.clear();
+    require('../youtube/prefetch').forget(queue);
+    await botReply('Queue cleared. The current song will continue playing.', messageChannel, interaction);
 }
-
-module.exports = {
-    clear_queue
-}
+module.exports = { clearQueue };

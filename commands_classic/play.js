@@ -9,6 +9,6 @@ module.exports = {
         let input = message.content.split(' ');
         input.shift();
         input = input.join(' ')
-        await play(input, message.member.voice.channel, message.channel)
+        await play(input, message.member.voice.channel, message.channel, undefined, message.author)
     },
 };

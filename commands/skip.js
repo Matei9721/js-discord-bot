@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const { SlashCommandBuilder } = require('discord.js');
 const {skip} = require("../music_logic/skip");
 
 module.exports = {
@@ -6,6 +6,6 @@ module.exports = {
         .setName('skip')
         .setDescription('Make the bot skip the current song'),
     async execute(interaction) {
-        await skip(interaction.channel);
+        await skip(interaction.channel, interaction);
     },
 };

@@ -1,4 +1,4 @@
-const {SlashCommandBuilder} = require('@discordjs/builders');
+const {SlashCommandBuilder} = require('discord.js');
 const {seek} = require("../music_logic/seek");
 
 module.exports = {
@@ -7,6 +7,7 @@ module.exports = {
         .setDescription('Seek to a specific time in the song')
         .addIntegerOption(option => option
             .setName('seconds')
+            .setMinValue(0)
             .setDescription('The second you want to jump to.')
             .setRequired(true)),
     async execute(interaction) {

@@ -9,6 +9,7 @@ const modeNames = {
 };
 
 async function loop(loopMode, messageChannel, interaction) {
+    if (!Object.hasOwn(modeNames, loopMode)) throw new Error('Invalid loop mode. Use off, track, queue or autoplay.');
     // Get the current queue
     const queue = useQueue();
     if (!queue) {
