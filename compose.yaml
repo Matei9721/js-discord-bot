@@ -1,0 +1,10 @@
+services:
+  bot:
+    build: .
+    env_file: .env
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 15s
+    # Optional: set YOUTUBE_COOKIES_FILE=/run/secrets/youtube-cookies in .env
+    # volumes:
+    #   - ./cookies.txt:/run/secrets/youtube-cookies:ro

@@ -1,79 +1,50 @@
+require('dotenv').config({ quiet: true });
+const { Client, GatewayIntentBits, Events } = require('discord.js');
+const { startPlayer } = require('./setupPlayer');
+const { loadCommands, registerCommands } = require('./commandRegister');
+const { createHandlers } = require('./handlers');
 const logger = require('./logging');
-const dotenv = require('dotenv');
-dotenv.config();
-const token = process.env.BOT_TOKEN
-
-const { Client, GatewayIntentBits, Events} = require('discord.js');
-
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildVoiceStates, GatewayIntentBits.MessageContent] });
-
-// Give map for playlists in client
-client.botMap = new Map();
-
-// Give command info to the client variable and initialize slash commands
-const commandRegister = require("./commandRegister");
-commandRegister().then(result => {
-    client.commands = result
-})
-
-const command_list = require('./commands')
-const command_list_lowercase = {}
-Object.keys(command_list).forEach((key) => {
-    command_list_lowercase[key.toLowerCase()] = command_list[key];
-});
-
-
-// Main logic for detecting changes in voice channel
-client.on(Events.VoiceStateUpdate, (oldState, newState) => {
-    //Checks and returns if the state change concerns the bot, otherwise continue
-    if(newState.member.user.id !== process.env.CLIENT_ID) return
-
-    // Represents a mute/deafen update
-    if(oldState.channelId === newState.channelId) return logger.debug('Mute/Deafen Update');
-
-    // Some connection
-    if(!oldState.channelId && newState.channelId) return logger.debug('Connection Update');
-
-    // Disconnection
-    if(oldState.channelId && !newState.channelId){
-        // Bot was disconnected?
-        if(client.botMap.has(newState.guild.id)) {
-            client.botMap.get(newState.guild.id).leaveMusic()
-        }
-
-        if(newState.id === client.user.id) return logger.debug(`${client.user.username} was disconnected from "${newState.guild.name}" server!`);
+function validateConfig(env = process.env) {
+    for (const key of ['BOT_TOKEN', 'CLIENT_ID']) if (!env[key]?.trim()) throw new Error(`Missing ${key} in .env`);
+    for (const key of ['CLIENT_ID', 'GUILD_ID']) if (env[key] && !/^\d{17,20}$/.test(env[key])) throw new Error(`${key} must be a Discord ID`);
+}
+async function main() {
+    validateConfig();
+    const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildVoiceStates, GatewayIntentBits.MessageContent], allowedMentions: { parse: [] } });
+    let player;
+    let handlers;
+    let stopping;
+    async function shutdown() {
+        if (stopping) return stopping;
+        stopping = (async () => {
+            handlers?.shutdown();
+            if (player) for (const queue of player.nodes.cache.values()) require('./music_logic/enqueue').cancelImports(queue);
+            require('./youtube/prefetch').clear();
+            await player?.destroy(); await client.destroy();
+        })();
+        return stopping;
     }
-});
-
-// Main interaction logic for slash commands
-client.on(Events.InteractionCreate, async interaction => {
-    if (!interaction.isCommand()) return;
-    const command = client.commands.get(interaction.commandName);
-    try {
-        await command.execute(interaction, client);
-    } catch (err) {
-        logger.error(err);
-    }
-});
-
-// Main interaction logic for ! commands
-client.on(Events.MessageCreate, async message => {
-    if(message.content.startsWith("!")) {
-        logger.debug("Command received: " + message.content)
-        
-        let command_name = message.content.split("!")[1].split(" ")[0].toLowerCase()
-        if(command_name in command_list_lowercase) command_list_lowercase[command_name](client, message)
-    }
-
-    Object.keys(command_list).forEach((key) => {
-        command_list_lowercase[key.toLowerCase()] = command_list[key];
+    for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => {
+        logger.info('Stopping bot...');
+        const timer = setTimeout(() => process.exit(1), 10000).unref();
+        shutdown().then(() => clearTimeout(timer)).catch(() => { process.exitCode = 1; });
     });
-
-    //Left here as easter egg for the first command ever created
-    if(message.content.startsWith("bot get him")) {
-        command_list.botGetHim(client, message)
-    } 
-})
-
-logger.info("Successfully logged in and running!")
-client.login(token);
+    try {
+        player = await startPlayer(client);
+        client.commands = loadCommands();
+        client.commandsClassic = require('./commandClassicRegister')();
+        handlers = createHandlers(client, player);
+        client.on(Events.InteractionCreate, handlers.interaction);
+        client.on(Events.MessageCreate, handlers.message);
+        client.on(Events.Error, error => logger.error(`[Discord] ${error.code || error.name}`));
+        client.once(Events.ClientReady, () => logger.info(`Logged in as ${client.user.tag}; slash and ! commands ready.`));
+        if (process.env.REGISTER_COMMANDS !== 'false') await registerCommands(client.commands);
+        await client.login(process.env.BOT_TOKEN);
+        return { client, player, shutdown };
+    } catch (error) { await shutdown(); throw error; }
+}
+if (require.main === module) main().catch(error => {
+    logger.error(`Startup failed: ${error.message}`);
+    process.exitCode = 1;
+});
+module.exports = { main, validateConfig };

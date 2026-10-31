@@ -1,32 +1,28 @@
 {
-  "name": "untitled",
+  "name": "js-discord-music-bot",
   "version": "1.0.0",
-  "description": "",
+  "description": "Discord music bot with slash and prefix commands, powered by yt-dlp",
   "main": "index.js",
-  "scripts": {
-    "start": "node index.js"
-  },
-  "keywords": [],
-  "author": "",
+  "type": "commonjs",
   "license": "ISC",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node --test tests/*.test.js",
+    "setup:youtube": "node scripts/install-ytdlp.js",
+    "check": "node scripts/check.js"
+  },
+  "engines": { "node": ">=24.17.0 <25" },
   "dependencies": {
-    "@discordjs/builders": "^0.9.0",
-    "@discordjs/rest": "^0.1.0-canary.0",
-    "@discordjs/voice": "^0.7.5",
-    "discord.js": "^14.8.0",
-    "dotenv": "^10.0.0",
-    "express": "^4.17.2",
-    "ffmpeg": "^0.0.4",
-    "ffmpeg-static": "^4.4.0",
-    "fluent-ffmpeg": "^2.1.2",
-    "libsodium-wrappers": "^0.7.13",
-    "play-audio": "^0.5.2",
-    "winston": "^3.8.2",
-    "youtube-search-api": "^1.0.11"
+    "@discord-player/extractor": "7.2.0",
+    "@snazzah/davey": "0.1.12",
+    "discord-player": "7.2.0",
+    "discord-api-types": "0.38.50",
+    "discord.js": "14.28.0",
+    "dotenv": "18.0.9",
+    "undici": "6.29.1",
+    "winston": "3.19.0"
   },
-  "devDependencies": {
-    "discord-api-types": "^0.25.2",
-    "ytdl-core": "^4.9.2"
-  },
-  "nodeVersion": "21.6.2"
+  "optionalDependencies": {
+    "ffmpeg-static": "5.3.0"
+  }
 }

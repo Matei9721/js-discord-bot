@@ -1,10 +1,11 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const { SlashCommandBuilder } = require('discord.js');
+const {botReply} = require("../bot-reply");
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('pop')
         .setDescription('Replies with Pop!'),
     async execute(interaction) {
-        await interaction.reply('Pop!');
+        await botReply('Pop!', interaction.channel, interaction);
     },
 };
