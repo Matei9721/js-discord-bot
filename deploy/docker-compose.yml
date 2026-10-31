@@ -1,0 +1,18 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  bot:
+    image: ghcr.io/matei9721/js-discord-bot:latest
+    container_name: js-discord-bot
+    env_file: .env
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 15s
+    logging: *default-logging
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+    # Outbound-only service: its own Compose network, no published ports.

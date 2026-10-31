@@ -14,6 +14,8 @@ docker compose logs -f bot
 
 Stop with `docker compose down`. The image runs as a non-root user, installs FFmpeg and yt-dlp including its JavaScript challenge solver, and uses Node 24. Secrets are supplied at runtime; `.env` and cookie files are excluded from the image. No inbound ports are needed. The host must allow outbound HTTPS, Discord WebSockets and UDP voice traffic.
 
+GitHub Actions tests pull requests and publishes the image to `ghcr.io/matei9721/js-discord-bot` after successful tests on `main`, tagged `latest` and `sha-<full-commit-sha>`. The server uses the separate Compose configuration in [`deploy/docker-compose.yml`](deploy/docker-compose.yml), with credentials injected at startup. See [`deploy/README.md`](deploy/README.md) for the server setup, webhook updates, and rollback procedure.
+
 ## Run locally
 
 Install Node **24.17 or newer within Node 24**, including npm. Then:
